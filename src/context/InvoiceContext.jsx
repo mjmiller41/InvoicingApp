@@ -143,10 +143,148 @@ export const InvoiceProvider = ({ children }) => {
     localStorage.setItem('invoicer_invoices', JSON.stringify(allInvoices));
   }, [allInvoices]);
 
+  const [allNotifications, setAllNotifications] = useState(() => {
+    const saved = localStorage.getItem('invoicer_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [dismissedNotifications, setDismissedNotifications] = useState(() => {
+    const saved = localStorage.getItem('invoicer_dismissed_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('invoicer_notifications', JSON.stringify(allNotifications));
+  }, [allNotifications]);
+
+  useEffect(() => {
+    localStorage.setItem('invoicer_dismissed_notifications', JSON.stringify(dismissedNotifications));
+  }, [dismissedNotifications]);
+
   // Derived filtered state for the active business
   const clients = allClients.filter(c => c.businessId === activeBusinessId);
   const invoices = allInvoices.filter(inv => inv.businessId === activeBusinessId);
   const businessInfo = businesses.find(b => b.id === activeBusinessId) || businesses[0];
+  const notifications = allNotifications.filter(n => !n.businessId || n.businessId === activeBusinessId);
+
+  // Automatic notification triggers (Overdue and Due Soon)
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const newNotifs = [];
+    const dismissedToClean = [];
+
+    const activeOverdueIds = new Set();
+    const activeDueSoonIds = new Set();
+
+    invoices.forEach(inv => {
+      const overdueId = `overdue-${inv.id}`;
+      const dueSoonId = `due-soon-${inv.id}`;
+
+      // Check if invoice is overdue
+      const isOverdue = inv.status === 'Overdue' || (inv.status === 'Sent' && inv.dueDate < todayStr);
+      // Check if invoice is due soon (Sent and due within next 3 days, but not overdue)
+      let isDueSoon = false;
+      if (inv.status === 'Sent' && !isOverdue) {
+        const diffTime = new Date(inv.dueDate) - new Date(todayStr);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 3) {
+          isDueSoon = true;
+        }
+      }
+
+      if (isOverdue) {
+        activeOverdueIds.add(overdueId);
+        const exists = allNotifications.some(n => n.id === overdueId);
+        const isDismissed = dismissedNotifications.includes(overdueId);
+        if (!exists && !isDismissed) {
+          newNotifs.push({
+            id: overdueId,
+            title: 'Invoice Overdue',
+            message: `Invoice ${inv.id} is overdue. Please check payment status.`,
+            type: 'error',
+            read: false,
+            timestamp: new Date().toISOString(),
+            actionLink: `/invoices/${inv.id}/edit`,
+            businessId: activeBusinessId
+          });
+        }
+      } else if (isDueSoon) {
+        activeDueSoonIds.add(dueSoonId);
+        const exists = allNotifications.some(n => n.id === dueSoonId);
+        const isDismissed = dismissedNotifications.includes(dueSoonId);
+        if (!exists && !isDismissed) {
+          newNotifs.push({
+            id: dueSoonId,
+            title: 'Invoice Due Soon',
+            message: `Invoice ${inv.id} is due in the next few days.`,
+            type: 'warning',
+            read: false,
+            timestamp: new Date().toISOString(),
+            actionLink: `/invoices/${inv.id}/edit`,
+            businessId: activeBusinessId
+          });
+        }
+      }
+    });
+
+    // Cleanup: check notifications belonging to this business that are no longer overdue/due-soon
+    const cleanNotifications = allNotifications.filter(n => {
+      if (n.businessId === activeBusinessId) {
+        if (n.id.startsWith('overdue-') && !activeOverdueIds.has(n.id)) {
+          dismissedToClean.push(n.id);
+          return false;
+        }
+        if (n.id.startsWith('due-soon-') && !activeDueSoonIds.has(n.id)) {
+          dismissedToClean.push(n.id);
+          return false;
+        }
+      }
+      return true;
+    });
+
+    // Check if dismissedNotifications needs cleanup
+    let dismissedChanged = false;
+    const cleanDismissed = dismissedNotifications.filter(id => {
+      const invId = id.replace('overdue-', '').replace('due-soon-', '');
+      const invoiceExists = invoices.some(inv => inv.id === invId);
+      
+      if (invoiceExists) {
+        if (id.startsWith('overdue-') && !activeOverdueIds.has(id)) {
+          dismissedChanged = true;
+          return false;
+        }
+        if (id.startsWith('due-soon-') && !activeDueSoonIds.has(id)) {
+          dismissedChanged = true;
+          return false;
+        }
+      }
+      return true;
+    });
+
+    const notifsChanged = cleanNotifications.length !== allNotifications.length || newNotifs.length > 0;
+
+    if (notifsChanged) {
+      setAllNotifications(prev => {
+        const cleaned = prev.filter(n => {
+          if (n.businessId === activeBusinessId) {
+            if (n.id.startsWith('overdue-') && !activeOverdueIds.has(n.id)) return false;
+            if (n.id.startsWith('due-soon-') && !activeDueSoonIds.has(n.id)) return false;
+          }
+          return true;
+        });
+        return [...newNotifs, ...cleaned];
+      });
+    }
+
+    if (dismissedChanged || dismissedToClean.length > 0) {
+      setDismissedNotifications(prev => {
+        return prev.filter(id => {
+          if (dismissedToClean.includes(id)) return false;
+          return cleanDismissed.includes(id);
+        });
+      });
+    }
+  }, [invoices, activeBusinessId]);
 
   // Client actions
   const addClient = (client) => {
@@ -168,6 +306,55 @@ export const InvoiceProvider = ({ children }) => {
   };
 
   // Invoice actions
+  // Notification actions
+  const addNotification = ({ title, message, type = 'info', actionLink = null, businessId = activeBusinessId }) => {
+    const newNotif = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title,
+      message,
+      type,
+      read: false,
+      timestamp: new Date().toISOString(),
+      actionLink,
+      businessId
+    };
+    setAllNotifications(prev => [newNotif, ...prev]);
+    return newNotif;
+  };
+
+  const markAsRead = (id) => {
+    setAllNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const markAllAsRead = () => {
+    setAllNotifications(prev => prev.map(n => !n.businessId || n.businessId === activeBusinessId ? { ...n, read: true } : n));
+  };
+
+  const clearNotification = (id) => {
+    if (id.startsWith('overdue-') || id.startsWith('due-soon-')) {
+      setDismissedNotifications(prev => {
+        if (prev.includes(id)) return prev;
+        return [...prev, id];
+      });
+    }
+    setAllNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const clearAllNotifications = () => {
+    const activeNotifs = allNotifications.filter(n => !n.businessId || n.businessId === activeBusinessId);
+    const autoIds = activeNotifs
+      .filter(n => n.id.startsWith('overdue-') || n.id.startsWith('due-soon-'))
+      .map(n => n.id);
+      
+    if (autoIds.length > 0) {
+      setDismissedNotifications(prev => {
+        const unique = new Set([...prev, ...autoIds]);
+        return Array.from(unique);
+      });
+    }
+    setAllNotifications(prev => prev.filter(n => n.businessId && n.businessId !== activeBusinessId));
+  };
+
   const addInvoice = (invoice) => {
     const newInvoice = { 
       ...invoice, 
@@ -175,6 +362,12 @@ export const InvoiceProvider = ({ children }) => {
       businessId: activeBusinessId
     };
     setAllInvoices(prev => [...prev, newInvoice]);
+    addNotification({
+      title: 'Invoice Created',
+      message: `Invoice ${newInvoice.id} was successfully created.`,
+      type: 'info',
+      actionLink: `/invoices/${newInvoice.id}/edit`
+    });
     return newInvoice;
   };
 
@@ -188,6 +381,14 @@ export const InvoiceProvider = ({ children }) => {
 
   const updateInvoiceStatus = (id, status) => {
     setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status } : inv));
+    if (status === 'Paid') {
+      addNotification({
+        title: 'Invoice Paid',
+        message: `Invoice ${id} has been marked as Paid.`,
+        type: 'success',
+        actionLink: `/invoices/${id}/edit`
+      });
+    }
   };
 
   // Business settings & management actions
@@ -232,6 +433,11 @@ export const InvoiceProvider = ({ children }) => {
 
   // Import Data method supporting merge (overwrite duplicates) or new (generate fresh IDs)
   const importData = ({ businesses: importedBiz, clients: importedClients, invoices: importedInvoices }, mode = 'merge') => {
+    let targetBizId = activeBusinessId;
+    let bCount = importedBiz?.length || 0;
+    let cCount = importedClients?.length || 0;
+    let iCount = importedInvoices?.length || 0;
+
     if (mode === 'new') {
       const bizIdMap = {};
       const clientIdMap = {};
@@ -264,6 +470,7 @@ export const InvoiceProvider = ({ children }) => {
       
       if (newBusinesses.length > 0) {
         setActiveBusinessId(newBusinesses[0].id);
+        targetBizId = newBusinesses[0].id;
       }
     } else {
       // Merge mode: overwrite existing matches by ID, insert new ones
@@ -285,6 +492,19 @@ export const InvoiceProvider = ({ children }) => {
         return Array.from(map.values());
       });
     }
+
+    // Add import success notification
+    const newNotif = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: 'Data Imported Successfully',
+      message: `Imported ${bCount} business(es), ${cCount} client(s), and ${iCount} invoice(s) using ${mode === 'merge' ? 'Merge & Overwrite' : 'Import as New Profiles'}.`,
+      type: 'success',
+      read: false,
+      timestamp: new Date().toISOString(),
+      actionLink: null,
+      businessId: targetBizId
+    };
+    setAllNotifications(prev => [newNotif, ...prev]);
   };
 
   // Dynamic calculations
@@ -327,7 +547,14 @@ export const InvoiceProvider = ({ children }) => {
       getInvoiceSubtotal,
       getInvoiceTax,
       getInvoiceTotal,
-      importData
+      importData,
+      notifications,
+      allNotifications,
+      addNotification,
+      markAsRead,
+      markAllAsRead,
+      clearNotification,
+      clearAllNotifications
     }}>
       {children}
     </InvoiceContext.Provider>
