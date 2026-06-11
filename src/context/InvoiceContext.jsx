@@ -70,73 +70,164 @@ const initialBusinessInfo = {
 };
 
 export const InvoiceProvider = ({ children }) => {
-  const [clients, setClients] = useState(() => {
+  // Initialize businesses list, migrating from older single business key if found
+  const [businesses, setBusinesses] = useState(() => {
+    const saved = localStorage.getItem('invoicer_businesses');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse businesses", e);
+      }
+    }
+    // Attempt migration from old invoicer_business key
+    const oldBiz = localStorage.getItem('invoicer_business');
+    if (oldBiz) {
+      try {
+        const parsed = JSON.parse(oldBiz);
+        return [{ ...parsed, id: 'b1' }];
+      } catch (e) {
+        console.error("Failed to parse old business", e);
+      }
+    }
+    return [{ ...initialBusinessInfo, id: 'b1' }];
+  });
+
+  // Initialize active business ID
+  const [activeBusinessId, setActiveBusinessId] = useState(() => {
+    const saved = localStorage.getItem('invoicer_active_business_id');
+    return saved || 'b1';
+  });
+
+  // Initialize all clients, ensuring they are linked to a businessId
+  const [allClients, setAllClients] = useState(() => {
     const saved = localStorage.getItem('invoicer_clients');
-    return saved ? JSON.parse(saved) : initialClients;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map(c => c.businessId ? c : { ...c, businessId: 'b1' });
+      } catch (e) {
+        console.error("Failed to parse clients", e);
+      }
+    }
+    return initialClients.map(c => ({ ...c, businessId: 'b1' }));
   });
 
-  const [invoices, setInvoices] = useState(() => {
+  // Initialize all invoices, ensuring they are linked to a businessId
+  const [allInvoices, setAllInvoices] = useState(() => {
     const saved = localStorage.getItem('invoicer_invoices');
-    return saved ? JSON.parse(saved) : initialInvoices;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map(inv => inv.businessId ? inv : { ...inv, businessId: 'b1' });
+      } catch (e) {
+        console.error("Failed to parse invoices", e);
+      }
+    }
+    return initialInvoices.map(inv => ({ ...inv, businessId: 'b1' }));
   });
 
-  const [businessInfo, setBusinessInfo] = useState(() => {
-    const saved = localStorage.getItem('invoicer_business');
-    return saved ? JSON.parse(saved) : initialBusinessInfo;
-  });
+  useEffect(() => {
+    localStorage.setItem('invoicer_businesses', JSON.stringify(businesses));
+  }, [businesses]);
 
   useEffect(() => {
-    localStorage.setItem('invoicer_clients', JSON.stringify(clients));
-  }, [clients]);
+    localStorage.setItem('invoicer_active_business_id', activeBusinessId);
+  }, [activeBusinessId]);
 
   useEffect(() => {
-    localStorage.setItem('invoicer_invoices', JSON.stringify(invoices));
-  }, [invoices]);
+    localStorage.setItem('invoicer_clients', JSON.stringify(allClients));
+  }, [allClients]);
 
   useEffect(() => {
-    localStorage.setItem('invoicer_business', JSON.stringify(businessInfo));
-  }, [businessInfo]);
+    localStorage.setItem('invoicer_invoices', JSON.stringify(allInvoices));
+  }, [allInvoices]);
+
+  // Derived filtered state for the active business
+  const clients = allClients.filter(c => c.businessId === activeBusinessId);
+  const invoices = allInvoices.filter(inv => inv.businessId === activeBusinessId);
+  const businessInfo = businesses.find(b => b.id === activeBusinessId) || businesses[0];
 
   // Client actions
   const addClient = (client) => {
-    const newClient = { ...client, id: `client-${Date.now()}` };
-    setClients(prev => [...prev, newClient]);
+    const newClient = { 
+      ...client, 
+      id: `client-${Date.now()}`,
+      businessId: activeBusinessId 
+    };
+    setAllClients(prev => [...prev, newClient]);
     return newClient;
   };
 
   const updateClient = (id, updatedClient) => {
-    setClients(prev => prev.map(c => c.id === id ? { ...c, ...updatedClient } : c));
+    setAllClients(prev => prev.map(c => c.id === id ? { ...c, ...updatedClient } : c));
   };
 
   const deleteClient = (id) => {
-    setClients(prev => prev.filter(c => c.id !== id));
+    setAllClients(prev => prev.filter(c => c.id !== id));
   };
 
   // Invoice actions
   const addInvoice = (invoice) => {
     const newInvoice = { 
       ...invoice, 
-      id: invoice.id || `INV-${Date.now().toString().slice(-4)}` 
+      id: invoice.id || `INV-${Date.now().toString().slice(-4)}`,
+      businessId: activeBusinessId
     };
-    setInvoices(prev => [...prev, newInvoice]);
+    setAllInvoices(prev => [...prev, newInvoice]);
     return newInvoice;
   };
 
   const updateInvoice = (id, updatedInvoice) => {
-    setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updatedInvoice } : inv));
+    setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updatedInvoice } : inv));
   };
 
   const deleteInvoice = (id) => {
-    setInvoices(prev => prev.filter(inv => inv.id !== id));
+    setAllInvoices(prev => prev.filter(inv => inv.id !== id));
   };
 
   const updateInvoiceStatus = (id, status) => {
-    setInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status } : inv));
+    setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status } : inv));
   };
 
-  // Business settings
+  // Business settings & management actions
   const updateBusinessInfo = (info) => {
-    setBusinessInfo(prev => ({ ...prev, ...info }));
+    setBusinesses(prev => prev.map(b => b.id === activeBusinessId ? { ...b, ...info } : b));
+  };
+
+  const addBusiness = (business) => {
+    const newBusiness = {
+      name: business.name,
+      email: business.email || '',
+      phone: business.phone || '',
+      address: business.address || '',
+      website: business.website || '',
+      id: `biz-${Date.now()}`
+    };
+    setBusinesses(prev => [...prev, newBusiness]);
+    setActiveBusinessId(newBusiness.id);
+    return newBusiness;
+  };
+
+  const deleteBusiness = (id) => {
+    if (businesses.length <= 1) return;
+
+    // Remove associated invoices and clients
+    setAllInvoices(prev => prev.filter(inv => inv.businessId !== id));
+    setAllClients(prev => prev.filter(c => c.businessId !== id));
+
+    // Remove the business entity
+    setBusinesses(prev => prev.filter(b => b.id !== id));
+
+    // Shift active business context if the current active business is deleted
+    if (activeBusinessId === id) {
+      const remaining = businesses.filter(b => b.id !== id);
+      setActiveBusinessId(remaining[0].id);
+    }
+  };
+
+  const selectBusiness = (id) => {
+    setActiveBusinessId(id);
   };
 
   // Dynamic calculations
@@ -161,6 +252,8 @@ export const InvoiceProvider = ({ children }) => {
       clients,
       invoices,
       businessInfo,
+      businesses,
+      activeBusinessId,
       addClient,
       updateClient,
       deleteClient,
@@ -169,6 +262,9 @@ export const InvoiceProvider = ({ children }) => {
       deleteInvoice,
       updateInvoiceStatus,
       updateBusinessInfo,
+      addBusiness,
+      deleteBusiness,
+      selectBusiness,
       getInvoiceSubtotal,
       getInvoiceTax,
       getInvoiceTotal

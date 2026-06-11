@@ -52,7 +52,7 @@ function DashboardLayout() {
             <div className="h-8 w-px bg-slate-200"></div>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-full bg-slate-800 text-white font-semibold flex items-center justify-center text-sm ring-2 ring-slate-100 shadow-sm">
-                T
+                {businessInfo.name ? businessInfo.name.charAt(0).toUpperCase() : 'B'}
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-xs font-semibold text-slate-800 leading-tight">

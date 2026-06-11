@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Building, Mail, Phone, MapPin, Globe, CheckCircle2 } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
 
@@ -16,6 +16,18 @@ function Settings() {
 
   const [errors, setErrors] = useState({});
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Reset form values when the active business profile changes
+  useEffect(() => {
+    setFormData({
+      name: businessInfo.name || '',
+      email: businessInfo.email || '',
+      phone: businessInfo.phone || '',
+      address: businessInfo.address || '',
+      website: businessInfo.website || ''
+    });
+    setErrors({});
+  }, [businessInfo]);
 
   // Input change handler
   const handleInputChange = (e) => {
