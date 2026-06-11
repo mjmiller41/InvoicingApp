@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, Plus, FileText, CheckCircle2, AlertTriangle, 
-  Clock, DollarSign, Edit, Trash2, Eye, RefreshCw, ChevronDown, Check
+  Clock, DollarSign, Edit, Trash2, Eye, RefreshCw, ChevronDown, Check, Upload
 } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
 
@@ -87,13 +87,22 @@ function Dashboard() {
             Monitor receivables, track payment statuses, and generate client invoices.
           </p>
         </div>
-        <Link
-          to="/invoices/new"
-          className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-colors duration-150 text-sm cursor-pointer"
-        >
-          <Plus className="h-4 w-4 stroke-[2.5]" />
-          Create Invoice
-        </Link>
+        <div className="flex gap-2.5">
+          <Link
+            to="/invoices/import"
+            className="inline-flex items-center justify-center gap-2 bg-white border border-slate-350 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-lg shadow-xs transition-colors duration-150 text-sm cursor-pointer"
+          >
+            <Upload className="h-4 w-4" />
+            Import Invoices
+          </Link>
+          <Link
+            to="/invoices/new"
+            className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-colors duration-150 text-sm cursor-pointer"
+          >
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            Create Invoice
+          </Link>
+        </div>
       </div>
 
       {/* Overview Cards */}

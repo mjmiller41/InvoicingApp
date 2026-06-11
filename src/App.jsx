@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import InvoiceBuilder from './pages/InvoiceBuilder';
 import Settings from './pages/Settings';
+import ImportInvoices from './pages/ImportInvoices';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="invoices/new" element={<InvoiceBuilder />} />
           <Route path="invoices/:id/edit" element={<InvoiceBuilder />} />
+          <Route path="invoices/import" element={<ImportInvoices />} />
           <Route path="clients" element={<Clients />} />
           <Route path="settings" element={<Settings />} />
         </Route>

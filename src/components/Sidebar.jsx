@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FileText, Users, Settings, Plus, Hammer, ChevronDown, Check, Trash2, X, AlertTriangle } from 'lucide-react';
+import { FileText, Users, Settings, Plus, Hammer, ChevronDown, Check, Trash2, X, AlertTriangle, Upload } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
 
 function Sidebar({ isOpen, onClose }) {
@@ -69,6 +69,7 @@ function Sidebar({ isOpen, onClose }) {
   const navItems = [
     { to: '/', label: 'Invoices', icon: FileText, end: true },
     { to: '/invoices/new', label: 'New Invoice', icon: Plus },
+    { to: '/invoices/import', label: 'Import Invoices', icon: Upload },
     { to: '/clients', label: 'Clients', icon: Users },
     { to: '/settings', label: 'Settings', icon: Settings },
   ];
