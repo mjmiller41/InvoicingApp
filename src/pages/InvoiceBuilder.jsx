@@ -144,6 +144,7 @@ function InvoiceBuilder() {
 
     if (isEditMode) {
       updateInvoice(id, invoiceData);
+      navigate(`/invoices/${id}`);
     } else {
       // Check if invoice number is already taken
       const exists = invoices.some(inv => inv.id === invoiceId);
@@ -152,9 +153,8 @@ function InvoiceBuilder() {
         return;
       }
       addInvoice(invoiceData);
+      navigate(`/invoices/${invoiceId}`);
     }
-
-    navigate('/');
   };
 
   return (

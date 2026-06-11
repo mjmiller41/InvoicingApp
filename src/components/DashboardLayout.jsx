@@ -108,7 +108,7 @@ function DashboardLayout() {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-30 shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-30 shrink-0 print:hidden">
           {/* Left part: menu toggle or brand info */}
           <div className="flex items-center gap-4">
             <button
@@ -257,8 +257,8 @@ function DashboardLayout() {
         </header>
 
         {/* Dynamic page content view */}
-        <main className="flex-1 overflow-y-auto focus:outline-none bg-slate-50">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto focus:outline-none bg-slate-50 print:bg-white print:overflow-visible print:p-0">
+          <div className="max-w-7xl mx-auto print:max-w-none print:w-full print:p-0">
             <Outlet />
           </div>
         </main>

@@ -335,6 +335,13 @@ function Dashboard() {
                         {!isConfirmingDelete ? (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
+                              onClick={() => navigate(`/invoices/${inv.id}`)}
+                              className="p-1.5 text-slate-400 hover:text-slate-650 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                              title="View Invoice"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
                               onClick={() => navigate(`/invoices/${inv.id}/edit`)}
                               className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                               title="Edit Invoice"

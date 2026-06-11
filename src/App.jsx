@@ -6,6 +6,7 @@ import Clients from './pages/Clients';
 import InvoiceBuilder from './pages/InvoiceBuilder';
 import Settings from './pages/Settings';
 import ImportInvoices from './pages/ImportInvoices';
+import InvoiceDetail from './pages/InvoiceDetail';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="invoices/new" element={<InvoiceBuilder />} />
+          <Route path="invoices/:id" element={<InvoiceDetail />} />
           <Route path="invoices/:id/edit" element={<InvoiceBuilder />} />
           <Route path="invoices/import" element={<ImportInvoices />} />
           <Route path="clients" element={<Clients />} />
