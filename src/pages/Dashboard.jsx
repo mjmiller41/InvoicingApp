@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Search, Plus, FileText, CheckCircle2, AlertTriangle, 
-  Clock, DollarSign, Edit, Trash2, Eye, RefreshCw 
+  Clock, DollarSign, Edit, Trash2, Eye, RefreshCw, ChevronDown, Check
 } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
 
@@ -20,6 +20,7 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   // Financial calculations
   const calculateMetrics = () => {
@@ -46,13 +47,7 @@ function Dashboard() {
 
   const { totalBilled, totalPaid, totalOutstanding, totalOverdue } = calculateMetrics();
 
-  // Handle invoice status change shortcut
-  const handleQuickStatusChange = (id, currentStatus) => {
-    const statuses = ['Draft', 'Sent', 'Paid', 'Overdue'];
-    const currentIndex = statuses.indexOf(currentStatus);
-    const nextIndex = (currentIndex + 1) % statuses.length;
-    updateInvoiceStatus(id, statuses[nextIndex]);
-  };
+
 
   // Filtered invoices
   const filteredInvoices = invoices.filter(inv => {
@@ -228,7 +223,7 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {filteredInvoices.map(inv => {
+                {filteredInvoices.map((inv, index) => {
                   const client = clients.find(c => c.id === inv.clientId);
                   const clientName = client ? client.name : 'Unknown Client';
                   const total = getInvoiceTotal(inv);
@@ -264,15 +259,66 @@ function Dashboard() {
 
                       {/* Status */}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span 
-                          onClick={() => handleQuickStatusChange(inv.id, inv.status)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer hover:opacity-85 select-none transition-all ${getStatusStyles(inv.status)}`}
-                          title="Click to cycle status"
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-current"></span>
-                          {inv.status}
-                          <RefreshCw className="h-3 w-3 text-slate-400 ml-0.5 opacity-0 group-hover:opacity-100 hover:rotate-45 transition-all" />
-                        </span>
+                        <div className="relative inline-block text-left">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdownId(openDropdownId === inv.id ? null : inv.id);
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border hover:opacity-85 select-none transition-all cursor-pointer ${getStatusStyles(inv.status)}`}
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-current"></span>
+                            {inv.status}
+                            <ChevronDown className="h-3 w-3 text-slate-500 shrink-0" />
+                          </button>
+
+                          {openDropdownId === inv.id && (
+                            <>
+                              {/* Overlay to close when clicking outside */}
+                              <div 
+                                className="fixed inset-0 z-10" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdownId(null);
+                                }}
+                              />
+                              {/* Dropdown menu */}
+                              <div className={`absolute left-0 w-32 rounded-lg bg-white border border-slate-200 shadow-lg z-25 py-1.5 animate-in fade-in duration-150 ${
+                                (filteredInvoices.length > 1 ? index >= filteredInvoices.length - 2 : true)
+                                  ? 'bottom-full mb-1.5 slide-in-from-bottom-1'
+                                  : 'top-full mt-1.5 slide-in-from-top-1'
+                              }`}>
+                                {['Draft', 'Sent', 'Paid', 'Overdue'].map((status) => (
+                                  <button
+                                    key={status}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateInvoiceStatus(inv.id, status);
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className={`w-full text-left px-3.5 py-1.5 text-xs font-medium transition-colors hover:bg-slate-50 flex items-center justify-between cursor-pointer ${
+                                      inv.status === status ? 'text-slate-900 bg-slate-50/50' : 'text-slate-600'
+                                    }`}
+                                  >
+                                    <span className="flex items-center gap-2">
+                                      <span className={`h-1.5 w-1.5 rounded-full ${
+                                        status === 'Paid' ? 'bg-emerald-500' :
+                                        status === 'Sent' ? 'bg-blue-500' :
+                                        status === 'Overdue' ? 'bg-rose-500' : 'bg-slate-400'
+                                      }`} />
+                                      {status}
+                                    </span>
+                                    {inv.status === status && (
+                                      <Check className="h-3 w-3 text-emerald-500" />
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </td>
 
                       {/* Actions */}
