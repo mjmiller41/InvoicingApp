@@ -230,6 +230,63 @@ export const InvoiceProvider = ({ children }) => {
     setActiveBusinessId(id);
   };
 
+  // Import Data method supporting merge (overwrite duplicates) or new (generate fresh IDs)
+  const importData = ({ businesses: importedBiz, clients: importedClients, invoices: importedInvoices }, mode = 'merge') => {
+    if (mode === 'new') {
+      const bizIdMap = {};
+      const clientIdMap = {};
+      
+      const newBusinesses = (importedBiz || []).map(biz => {
+        const oldId = biz.id;
+        const newId = `biz-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        bizIdMap[oldId] = newId;
+        return { ...biz, id: newId };
+      });
+      
+      const newClients = (importedClients || []).map(c => {
+        const oldId = c.id;
+        const newId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        clientIdMap[oldId] = newId;
+        const newBizId = bizIdMap[c.businessId] || c.businessId;
+        return { ...c, id: newId, businessId: newBizId };
+      });
+      
+      const newInvoices = (importedInvoices || []).map(inv => {
+        const newId = `INV-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substr(2, 5)}`;
+        const newBizId = bizIdMap[inv.businessId] || inv.businessId;
+        const newClientId = clientIdMap[inv.clientId] || inv.clientId;
+        return { ...inv, id: newId, businessId: newBizId, clientId: newClientId };
+      });
+      
+      setBusinesses(prev => [...prev, ...newBusinesses]);
+      setAllClients(prev => [...prev, ...newClients]);
+      setAllInvoices(prev => [...prev, ...newInvoices]);
+      
+      if (newBusinesses.length > 0) {
+        setActiveBusinessId(newBusinesses[0].id);
+      }
+    } else {
+      // Merge mode: overwrite existing matches by ID, insert new ones
+      setBusinesses(prev => {
+        const map = new Map(prev.map(b => [b.id, b]));
+        (importedBiz || []).forEach(b => map.set(b.id, b));
+        return Array.from(map.values());
+      });
+      
+      setAllClients(prev => {
+        const map = new Map(prev.map(c => [c.id, c]));
+        (importedClients || []).forEach(c => map.set(c.id, c));
+        return Array.from(map.values());
+      });
+      
+      setAllInvoices(prev => {
+        const map = new Map(prev.map(inv => [inv.id, inv]));
+        (importedInvoices || []).forEach(inv => map.set(inv.id, inv));
+        return Array.from(map.values());
+      });
+    }
+  };
+
   // Dynamic calculations
   const getInvoiceSubtotal = (invoice) => {
     if (!invoice || !invoice.items) return 0;
@@ -251,6 +308,8 @@ export const InvoiceProvider = ({ children }) => {
     <InvoiceContext.Provider value={{
       clients,
       invoices,
+      allClients,
+      allInvoices,
       businessInfo,
       businesses,
       activeBusinessId,
@@ -267,7 +326,8 @@ export const InvoiceProvider = ({ children }) => {
       selectBusiness,
       getInvoiceSubtotal,
       getInvoiceTax,
-      getInvoiceTotal
+      getInvoiceTotal,
+      importData
     }}>
       {children}
     </InvoiceContext.Provider>
