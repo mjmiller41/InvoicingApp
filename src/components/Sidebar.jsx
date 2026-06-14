@@ -54,7 +54,7 @@ function Sidebar({ isOpen, onClose }) {
     setIsAddModalOpen(false);
     setDropdownOpen(false);
     onClose(); // close mobile sidebar
-    navigate('/settings'); // go to settings to complete setup
+    navigate('/app/settings'); // go to settings to complete setup
   };
 
   const handleDeleteConfirm = () => {
@@ -67,11 +67,11 @@ function Sidebar({ isOpen, onClose }) {
   };
 
   const navItems = [
-    { to: '/', label: 'Invoices', icon: FileText, end: true },
-    { to: '/invoices/new', label: 'New Invoice', icon: Plus },
-    { to: '/invoices/import', label: 'Import Invoices', icon: Upload },
-    { to: '/clients', label: 'Clients', icon: Users },
-    { to: '/settings', label: 'Settings', icon: Settings },
+    { to: '/app', label: 'Invoices', icon: FileText, end: true },
+    { to: '/app/invoices/new', label: 'New Invoice', icon: Plus },
+    { to: '/app/invoices/import', label: 'Import Invoices', icon: Upload },
+    { to: '/app/clients', label: 'Clients', icon: Users },
+    { to: '/app/settings', label: 'Settings', icon: Settings },
   ];
 
   return (

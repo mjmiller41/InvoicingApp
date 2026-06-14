@@ -213,7 +213,7 @@ export const InvoiceProvider = ({ children }) => {
             type: 'error',
             read: false,
             timestamp: new Date().toISOString(),
-            actionLink: `/invoices/${inv.id}/edit`,
+            actionLink: `/app/invoices/${inv.id}/edit`,
             businessId: activeBusinessId
           });
         }
@@ -229,7 +229,7 @@ export const InvoiceProvider = ({ children }) => {
             type: 'warning',
             read: false,
             timestamp: new Date().toISOString(),
-            actionLink: `/invoices/${inv.id}/edit`,
+            actionLink: `/app/invoices/${inv.id}/edit`,
             businessId: activeBusinessId
           });
         }
@@ -377,7 +377,7 @@ export const InvoiceProvider = ({ children }) => {
       title: 'Invoice Created',
       message: `Invoice ${newInvoice.id} was successfully created.`,
       type: 'info',
-      actionLink: `/invoices/${newInvoice.id}/edit`
+      actionLink: `/app/invoices/${newInvoice.id}/edit`
     });
     return newInvoice;
   }, [activeBusinessId, addNotification]);
@@ -397,7 +397,7 @@ export const InvoiceProvider = ({ children }) => {
         title: 'Invoice Paid',
         message: `Invoice ${id} has been marked as Paid.`,
         type: 'success',
-        actionLink: `/invoices/${id}/edit`
+        actionLink: `/app/invoices/${id}/edit`
       });
     }
   }, [addNotification]);

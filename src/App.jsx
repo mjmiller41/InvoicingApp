@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
@@ -7,12 +7,17 @@ import InvoiceBuilder from './pages/InvoiceBuilder';
 import Settings from './pages/Settings';
 import ImportInvoices from './pages/ImportInvoices';
 import InvoiceDetail from './pages/InvoiceDetail';
+import Landing from './pages/marketing/Landing';
+import Pricing from './pages/marketing/Pricing';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<DashboardLayout />}>
+        <Route path="/" element={<Landing />} />
+        <Route path="/welcome" element={<Navigate to="/" replace />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/app" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="invoices/new" element={<InvoiceBuilder />} />
           <Route path="invoices/:id" element={<InvoiceDetail />} />

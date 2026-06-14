@@ -42,7 +42,7 @@ function InvoiceDetail() {
     return (
       <div className="p-12 text-center">
         <p className="text-slate-500 text-sm">Invoice not found.</p>
-        <Link to="/" className="text-emerald-600 underline mt-4 inline-block font-semibold">
+        <Link to="/app" className="text-emerald-600 underline mt-4 inline-block font-semibold">
           Return to Dashboard
         </Link>
       </div>
@@ -188,7 +188,7 @@ function InvoiceDetail() {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/"
+            to="/app"
             className="p-2 border border-slate-200 bg-white rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -207,7 +207,7 @@ function InvoiceDetail() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            to={`/invoices/${invoice.id}/edit`}
+            to={`/app/invoices/${invoice.id}/edit`}
             className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-350 hover:bg-slate-50 text-slate-750 font-semibold px-3.5 py-2 rounded-lg text-sm shadow-xs transition-colors cursor-pointer"
           >
             <Edit className="h-4 w-4" />

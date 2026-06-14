@@ -70,14 +70,14 @@ function Dashboard() {
         </div>
         <div className="flex gap-2.5">
           <Link
-            to="/invoices/import"
+            to="/app/invoices/import"
             className="inline-flex items-center justify-center gap-2 bg-white border border-slate-350 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-lg shadow-xs transition-colors duration-150 text-sm cursor-pointer"
           >
             <Upload className="h-4 w-4" />
             Import Invoices
           </Link>
           <Link
-            to="/invoices/new"
+            to="/app/invoices/new"
             className="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-colors duration-150 text-sm cursor-pointer"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
@@ -305,14 +305,14 @@ function Dashboard() {
                         {!isConfirmingDelete ? (
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => navigate(`/invoices/${inv.id}`)}
+                              onClick={() => navigate(`/app/invoices/${inv.id}`)}
                               className="p-1.5 text-slate-400 hover:text-slate-650 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                               title="View Invoice"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => navigate(`/invoices/${inv.id}/edit`)}
+                              onClick={() => navigate(`/app/invoices/${inv.id}/edit`)}
                               className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                               title="Edit Invoice"
                             >

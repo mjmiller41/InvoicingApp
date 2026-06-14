@@ -61,7 +61,7 @@ function InvoiceBuilder() {
         setNotes(invoice.notes || '');
         setItems(invoice.items.map(item => ({ ...item })));
       } else {
-        navigate('/');
+        navigate('/app');
       }
     } else {
       initialized.current = true;
@@ -177,7 +177,7 @@ function InvoiceBuilder() {
       {/* Top Header Row */}
       <div className="flex items-center gap-4 mb-8">
         <Link
-          to="/"
+          to="/app"
           className="p-2 border border-slate-200 bg-white rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -232,7 +232,7 @@ function InvoiceBuilder() {
                 {clients.length === 0 ? (
                   <div className="text-sm py-2 text-rose-600 font-semibold bg-rose-50 border border-rose-100 rounded-lg px-3 flex items-center justify-between">
                     <span>No clients registered.</span>
-                    <Link to="/clients" className="underline text-rose-700 hover:text-rose-800">
+                    <Link to="/app/clients" className="underline text-rose-700 hover:text-rose-800">
                       Add Client First
                     </Link>
                   </div>
@@ -497,7 +497,7 @@ function InvoiceBuilder() {
               </button>
 
               <Link
-                to="/"
+                to="/app"
                 className="w-full inline-flex items-center justify-center border border-slate-350 text-slate-700 hover:bg-slate-50 font-semibold py-2.5 rounded-lg text-sm transition-all text-center"
               >
                 Cancel

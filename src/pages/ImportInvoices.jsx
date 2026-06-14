@@ -247,7 +247,7 @@ function ImportInvoices() {
       addInvoice(finalInvoice);
     }
 
-    navigate('/');
+    navigate('/app');
   };
 
   const resetPdfState = () => {
@@ -505,7 +505,7 @@ function ImportInvoices() {
       if (csvSuccessTimeoutRef.current) clearTimeout(csvSuccessTimeoutRef.current);
       csvSuccessTimeoutRef.current = setTimeout(() => {
         setCsvImportSuccess(false);
-        navigate('/');
+        navigate('/app');
       }, 3000);
     } catch (err) {
       alert(`Error during execution: ${err.message}`);
@@ -536,7 +536,7 @@ function ImportInvoices() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link 
-          to="/"
+          to="/app"
           className="p-2 border border-slate-200 bg-white rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
