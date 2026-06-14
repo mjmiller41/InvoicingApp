@@ -45,7 +45,7 @@ export function parseCSV(text) {
  * @param {string} dateStr 
  * @returns {string} Normalized date or empty string
  */
-function normalizeDate(dateStr) {
+export function normalizeDate(dateStr) {
   if (!dateStr) return '';
   try {
     const d = new Date(dateStr.replace(/[-.]/g, '/'));
@@ -251,7 +251,7 @@ export function extractFieldsFromText(text) {
       const rate = parseFloat(match[3].replace(/,/g, '')) || 0;
       if (description && quantity > 0 && rate >= 0) {
         result.items.push({
-          id: `item-parsed-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          id: `item-parsed-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           description,
           quantity,
           rate
@@ -265,7 +265,7 @@ export function extractFieldsFromText(text) {
         const rate = parseFloat(match[3].replace(/,/g, '')) || 0;
         if (description && quantity > 0 && rate >= 0) {
           result.items.push({
-            id: `item-parsed-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            id: `item-parsed-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
             description,
             quantity,
             rate
