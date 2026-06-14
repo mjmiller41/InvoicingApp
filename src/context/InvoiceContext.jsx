@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const InvoiceContext = createContext();
 
-// Mock Initial State
 const initialClients = [
   {
     id: 'c1',
@@ -31,7 +30,7 @@ const initialInvoices = [
       { id: 'item-2', description: 'Delivery & Installation', quantity: 1, rate: 250 }
     ],
     taxRate: 8,
-    status: 'Paid', // Paid, Sent, Draft, Overdue
+    status: 'Paid',
     notes: 'Thank you for your custom order! Enjoy your table.',
   },
   {
@@ -70,7 +69,6 @@ const initialBusinessInfo = {
 };
 
 export const InvoiceProvider = ({ children }) => {
-  // Initialize businesses list, migrating from older single business key if found
   const [businesses, setBusinesses] = useState(() => {
     const saved = localStorage.getItem('invoicer_businesses');
     if (saved) {
@@ -80,7 +78,6 @@ export const InvoiceProvider = ({ children }) => {
         console.error("Failed to parse businesses", e);
       }
     }
-    // Attempt migration from old invoicer_business key
     const oldBiz = localStorage.getItem('invoicer_business');
     if (oldBiz) {
       try {
@@ -93,13 +90,11 @@ export const InvoiceProvider = ({ children }) => {
     return [{ ...initialBusinessInfo, id: 'b1' }];
   });
 
-  // Initialize active business ID
   const [activeBusinessId, setActiveBusinessId] = useState(() => {
     const saved = localStorage.getItem('invoicer_active_business_id');
     return saved || 'b1';
   });
 
-  // Initialize all clients, ensuring they are linked to a businessId
   const [allClients, setAllClients] = useState(() => {
     const saved = localStorage.getItem('invoicer_clients');
     if (saved) {
@@ -113,7 +108,6 @@ export const InvoiceProvider = ({ children }) => {
     return initialClients.map(c => ({ ...c, businessId: 'b1' }));
   });
 
-  // Initialize all invoices, ensuring they are linked to a businessId
   const [allInvoices, setAllInvoices] = useState(() => {
     const saved = localStorage.getItem('invoicer_invoices');
     if (saved) {
@@ -125,6 +119,32 @@ export const InvoiceProvider = ({ children }) => {
       }
     }
     return initialInvoices.map(inv => ({ ...inv, businessId: 'b1' }));
+  });
+
+  const [allNotifications, setAllNotifications] = useState(() => {
+    const saved = localStorage.getItem('invoicer_notifications');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse notifications", e);
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const [dismissedNotifications, setDismissedNotifications] = useState(() => {
+    const saved = localStorage.getItem('invoicer_dismissed_notifications');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse dismissed notifications", e);
+        return [];
+      }
+    }
+    return [];
   });
 
   useEffect(() => {
@@ -143,16 +163,6 @@ export const InvoiceProvider = ({ children }) => {
     localStorage.setItem('invoicer_invoices', JSON.stringify(allInvoices));
   }, [allInvoices]);
 
-  const [allNotifications, setAllNotifications] = useState(() => {
-    const saved = localStorage.getItem('invoicer_notifications');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [dismissedNotifications, setDismissedNotifications] = useState(() => {
-    const saved = localStorage.getItem('invoicer_dismissed_notifications');
-    return saved ? JSON.parse(saved) : [];
-  });
-
   useEffect(() => {
     localStorage.setItem('invoicer_notifications', JSON.stringify(allNotifications));
   }, [allNotifications]);
@@ -168,6 +178,7 @@ export const InvoiceProvider = ({ children }) => {
   const notifications = allNotifications.filter(n => !n.businessId || n.businessId === activeBusinessId);
 
   // Automatic notification triggers (Overdue and Due Soon)
+  // allNotifications and dismissedNotifications are in deps to prevent stale-closure duplicates
   useEffect(() => {
     const todayStr = new Date().toISOString().split('T')[0];
     const newNotifs = [];
@@ -180,9 +191,7 @@ export const InvoiceProvider = ({ children }) => {
       const overdueId = `overdue-${inv.id}`;
       const dueSoonId = `due-soon-${inv.id}`;
 
-      // Check if invoice is overdue
       const isOverdue = inv.status === 'Overdue' || (inv.status === 'Sent' && inv.dueDate < todayStr);
-      // Check if invoice is due soon (Sent and due within next 3 days, but not overdue)
       let isDueSoon = false;
       if (inv.status === 'Sent' && !isOverdue) {
         const diffTime = new Date(inv.dueDate) - new Date(todayStr);
@@ -227,7 +236,6 @@ export const InvoiceProvider = ({ children }) => {
       }
     });
 
-    // Cleanup: check notifications belonging to this business that are no longer overdue/due-soon
     const cleanNotifications = allNotifications.filter(n => {
       if (n.businessId === activeBusinessId) {
         if (n.id.startsWith('overdue-') && !activeOverdueIds.has(n.id)) {
@@ -242,12 +250,11 @@ export const InvoiceProvider = ({ children }) => {
       return true;
     });
 
-    // Check if dismissedNotifications needs cleanup
     let dismissedChanged = false;
     const cleanDismissed = dismissedNotifications.filter(id => {
       const invId = id.replace('overdue-', '').replace('due-soon-', '');
       const invoiceExists = invoices.some(inv => inv.id === invId);
-      
+
       if (invoiceExists) {
         if (id.startsWith('overdue-') && !activeOverdueIds.has(id)) {
           dismissedChanged = true;
@@ -284,32 +291,31 @@ export const InvoiceProvider = ({ children }) => {
         });
       });
     }
-  }, [invoices, activeBusinessId]);
+  }, [invoices, activeBusinessId, allNotifications, dismissedNotifications]);
 
   // Client actions
-  const addClient = (client) => {
-    const newClient = { 
-      ...client, 
+  const addClient = useCallback((client) => {
+    const newClient = {
+      ...client,
       id: `client-${Date.now()}`,
-      businessId: activeBusinessId 
+      businessId: activeBusinessId
     };
     setAllClients(prev => [...prev, newClient]);
     return newClient;
-  };
+  }, [activeBusinessId]);
 
-  const updateClient = (id, updatedClient) => {
+  const updateClient = useCallback((id, updatedClient) => {
     setAllClients(prev => prev.map(c => c.id === id ? { ...c, ...updatedClient } : c));
-  };
+  }, []);
 
-  const deleteClient = (id) => {
+  const deleteClient = useCallback((id) => {
     setAllClients(prev => prev.filter(c => c.id !== id));
-  };
+  }, []);
 
-  // Invoice actions
   // Notification actions
-  const addNotification = ({ title, message, type = 'info', actionLink = null, businessId = activeBusinessId }) => {
+  const addNotification = useCallback(({ title, message, type = 'info', actionLink = null, businessId = activeBusinessId }) => {
     const newNotif = {
-      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       title,
       message,
       type,
@@ -320,17 +326,19 @@ export const InvoiceProvider = ({ children }) => {
     };
     setAllNotifications(prev => [newNotif, ...prev]);
     return newNotif;
-  };
+  }, [activeBusinessId]);
 
-  const markAsRead = (id) => {
+  const markAsRead = useCallback((id) => {
     setAllNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
+  }, []);
 
-  const markAllAsRead = () => {
-    setAllNotifications(prev => prev.map(n => !n.businessId || n.businessId === activeBusinessId ? { ...n, read: true } : n));
-  };
+  const markAllAsRead = useCallback(() => {
+    setAllNotifications(prev => prev.map(n =>
+      !n.businessId || n.businessId === activeBusinessId ? { ...n, read: true } : n
+    ));
+  }, [activeBusinessId]);
 
-  const clearNotification = (id) => {
+  const clearNotification = useCallback((id) => {
     if (id.startsWith('overdue-') || id.startsWith('due-soon-')) {
       setDismissedNotifications(prev => {
         if (prev.includes(id)) return prev;
@@ -338,27 +346,30 @@ export const InvoiceProvider = ({ children }) => {
       });
     }
     setAllNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  }, []);
 
-  const clearAllNotifications = () => {
-    const activeNotifs = allNotifications.filter(n => !n.businessId || n.businessId === activeBusinessId);
-    const autoIds = activeNotifs
-      .filter(n => n.id.startsWith('overdue-') || n.id.startsWith('due-soon-'))
-      .map(n => n.id);
-      
-    if (autoIds.length > 0) {
-      setDismissedNotifications(prev => {
-        const unique = new Set([...prev, ...autoIds]);
-        return Array.from(unique);
-      });
-    }
-    setAllNotifications(prev => prev.filter(n => n.businessId && n.businessId !== activeBusinessId));
-  };
+  const clearAllNotifications = useCallback(() => {
+    setAllNotifications(prev => {
+      const activeNotifs = prev.filter(n => !n.businessId || n.businessId === activeBusinessId);
+      const autoIds = activeNotifs
+        .filter(n => n.id.startsWith('overdue-') || n.id.startsWith('due-soon-'))
+        .map(n => n.id);
 
-  const addInvoice = (invoice) => {
-    const newInvoice = { 
-      ...invoice, 
-      id: invoice.id || `INV-${Date.now().toString().slice(-4)}`,
+      if (autoIds.length > 0) {
+        setDismissedNotifications(prev2 => {
+          const unique = new Set([...prev2, ...autoIds]);
+          return Array.from(unique);
+        });
+      }
+      return prev.filter(n => n.businessId && n.businessId !== activeBusinessId);
+    });
+  }, [activeBusinessId]);
+
+  // Invoice actions
+  const addInvoice = useCallback((invoice) => {
+    const newInvoice = {
+      ...invoice,
+      id: invoice.id || `INV-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
       businessId: activeBusinessId
     };
     setAllInvoices(prev => [...prev, newInvoice]);
@@ -369,17 +380,17 @@ export const InvoiceProvider = ({ children }) => {
       actionLink: `/invoices/${newInvoice.id}/edit`
     });
     return newInvoice;
-  };
+  }, [activeBusinessId, addNotification]);
 
-  const updateInvoice = (id, updatedInvoice) => {
+  const updateInvoice = useCallback((id, updatedInvoice) => {
     setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updatedInvoice } : inv));
-  };
+  }, []);
 
-  const deleteInvoice = (id) => {
+  const deleteInvoice = useCallback((id) => {
     setAllInvoices(prev => prev.filter(inv => inv.id !== id));
-  };
+  }, []);
 
-  const updateInvoiceStatus = (id, status) => {
+  const updateInvoiceStatus = useCallback((id, status) => {
     setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, status } : inv));
     if (status === 'Paid') {
       addNotification({
@@ -389,14 +400,14 @@ export const InvoiceProvider = ({ children }) => {
         actionLink: `/invoices/${id}/edit`
       });
     }
-  };
+  }, [addNotification]);
 
   // Business settings & management actions
-  const updateBusinessInfo = (info) => {
+  const updateBusinessInfo = useCallback((info) => {
     setBusinesses(prev => prev.map(b => b.id === activeBusinessId ? { ...b, ...info } : b));
-  };
+  }, [activeBusinessId]);
 
-  const addBusiness = (business) => {
+  const addBusiness = useCallback((business) => {
     const newBusiness = {
       name: business.name,
       email: business.email || '',
@@ -408,84 +419,78 @@ export const InvoiceProvider = ({ children }) => {
     setBusinesses(prev => [...prev, newBusiness]);
     setActiveBusinessId(newBusiness.id);
     return newBusiness;
-  };
+  }, []);
 
-  const deleteBusiness = (id) => {
+  const deleteBusiness = useCallback((id) => {
     if (businesses.length <= 1) return;
 
-    // Remove associated invoices and clients
     setAllInvoices(prev => prev.filter(inv => inv.businessId !== id));
     setAllClients(prev => prev.filter(c => c.businessId !== id));
-
-    // Remove the business entity
     setBusinesses(prev => prev.filter(b => b.id !== id));
 
-    // Shift active business context if the current active business is deleted
     if (activeBusinessId === id) {
       const remaining = businesses.filter(b => b.id !== id);
       setActiveBusinessId(remaining[0].id);
     }
-  };
+  }, [businesses, activeBusinessId]);
 
-  const selectBusiness = (id) => {
+  const selectBusiness = useCallback((id) => {
     setActiveBusinessId(id);
-  };
+  }, []);
 
-  // Import Data method supporting merge (overwrite duplicates) or new (generate fresh IDs)
-  const importData = ({ businesses: importedBiz, clients: importedClients, invoices: importedInvoices }, mode = 'merge') => {
+  const importData = useCallback(({ businesses: importedBiz, clients: importedClients, invoices: importedInvoices }, mode = 'merge') => {
     let targetBizId = activeBusinessId;
-    let bCount = importedBiz?.length || 0;
-    let cCount = importedClients?.length || 0;
-    let iCount = importedInvoices?.length || 0;
+    const bCount = importedBiz?.length || 0;
+    const cCount = importedClients?.length || 0;
+    const iCount = importedInvoices?.length || 0;
 
     if (mode === 'new') {
       const bizIdMap = {};
       const clientIdMap = {};
-      
+
       const newBusinesses = (importedBiz || []).map(biz => {
         const oldId = biz.id;
-        const newId = `biz-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const newId = `biz-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         bizIdMap[oldId] = newId;
         return { ...biz, id: newId };
       });
-      
+
       const newClients = (importedClients || []).map(c => {
         const oldId = c.id;
-        const newId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const newId = `client-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         clientIdMap[oldId] = newId;
         const newBizId = bizIdMap[c.businessId] || c.businessId;
         return { ...c, id: newId, businessId: newBizId };
       });
-      
+
       const newInvoices = (importedInvoices || []).map(inv => {
-        const newId = `INV-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substr(2, 5)}`;
+        const newId = `INV-${Date.now().toString().slice(-4)}-${Math.random().toString(36).substring(2, 7)}`;
         const newBizId = bizIdMap[inv.businessId] || inv.businessId;
         const newClientId = clientIdMap[inv.clientId] || inv.clientId;
         return { ...inv, id: newId, businessId: newBizId, clientId: newClientId };
       });
-      
+
       setBusinesses(prev => [...prev, ...newBusinesses]);
       setAllClients(prev => [...prev, ...newClients]);
       setAllInvoices(prev => [...prev, ...newInvoices]);
-      
+
       if (newBusinesses.length > 0) {
         setActiveBusinessId(newBusinesses[0].id);
         targetBizId = newBusinesses[0].id;
       }
     } else {
-      // Merge mode: overwrite existing matches by ID, insert new ones
       setBusinesses(prev => {
         const map = new Map(prev.map(b => [b.id, b]));
         (importedBiz || []).forEach(b => map.set(b.id, b));
         return Array.from(map.values());
       });
-      
+
       setAllClients(prev => {
         const map = new Map(prev.map(c => [c.id, c]));
         (importedClients || []).forEach(c => map.set(c.id, c));
         return Array.from(map.values());
       });
-      
+
       setAllInvoices(prev => {
         const map = new Map(prev.map(inv => [inv.id, inv]));
         (importedInvoices || []).forEach(inv => map.set(inv.id, inv));
@@ -493,9 +498,8 @@ export const InvoiceProvider = ({ children }) => {
       });
     }
 
-    // Add import success notification
     const newNotif = {
-      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       title: 'Data Imported Successfully',
       message: `Imported ${bCount} business(es), ${cCount} client(s), and ${iCount} invoice(s) using ${mode === 'merge' ? 'Merge & Overwrite' : 'Import as New Profiles'}.`,
       type: 'success',
@@ -505,24 +509,24 @@ export const InvoiceProvider = ({ children }) => {
       businessId: targetBizId
     };
     setAllNotifications(prev => [newNotif, ...prev]);
-  };
+  }, [activeBusinessId]);
 
-  // Dynamic calculations
-  const getInvoiceSubtotal = (invoice) => {
+  // Dynamic calculations — stable references (no state deps)
+  const getInvoiceSubtotal = useCallback((invoice) => {
     if (!invoice || !invoice.items) return 0;
     return invoice.items.reduce((sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.rate) || 0)), 0);
-  };
+  }, []);
 
-  const getInvoiceTax = (invoice) => {
+  const getInvoiceTax = useCallback((invoice) => {
     if (!invoice) return 0;
     const subtotal = getInvoiceSubtotal(invoice);
     return subtotal * ((Number(invoice.taxRate) || 0) / 100);
-  };
+  }, [getInvoiceSubtotal]);
 
-  const getInvoiceTotal = (invoice) => {
+  const getInvoiceTotal = useCallback((invoice) => {
     if (!invoice) return 0;
     return getInvoiceSubtotal(invoice) + getInvoiceTax(invoice);
-  };
+  }, [getInvoiceSubtotal, getInvoiceTax]);
 
   return (
     <InvoiceContext.Provider value={{

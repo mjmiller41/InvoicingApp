@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Search, Plus, FileText, CheckCircle2, AlertTriangle, 
+import {
+  Search, Plus, FileText, CheckCircle2, AlertTriangle,
   Clock, DollarSign, Edit, Trash2, Eye, RefreshCw, ChevronDown, Check, Upload
 } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
+import { getStatusStyles } from '../utils/statusStyles';
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { 
-    invoices, 
-    clients, 
-    deleteInvoice, 
-    updateInvoiceStatus, 
-    getInvoiceTotal 
+  const {
+    invoices,
+    clients,
+    deleteInvoice,
+    updateInvoiceStatus,
+    getInvoiceTotal
   } = useInvoices();
 
-  // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
-  // Financial calculations
-  const calculateMetrics = () => {
+  // Financial calculations — only recompute when invoices change
+  const { totalBilled, totalPaid, totalOutstanding, totalOverdue } = useMemo(() => {
     let totalBilled = 0;
     let totalPaid = 0;
     let totalOutstanding = 0;
@@ -43,15 +43,10 @@ function Dashboard() {
     });
 
     return { totalBilled, totalPaid, totalOutstanding, totalOverdue };
-  };
-
-  const { totalBilled, totalPaid, totalOutstanding, totalOverdue } = calculateMetrics();
-
-
+  }, [invoices, getInvoiceTotal]);
 
   // Filtered invoices
-  const filteredInvoices = invoices.filter(inv => {
-    // Client lookup
+  const filteredInvoices = useMemo(() => invoices.filter(inv => {
     const client = clients.find(c => c.id === inv.clientId);
     const clientName = client ? client.name.toLowerCase() : 'unknown client';
     const invoiceId = inv.id.toLowerCase();
@@ -61,21 +56,7 @@ function Dashboard() {
     const matchesStatus = statusFilter === 'All' || inv.status === statusFilter;
 
     return matchesSearch && matchesStatus;
-  });
-
-  // Helper for status classes
-  const getStatusStyles = (status) => {
-    switch (status) {
-      case 'Paid':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'Sent':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Overdue':
-        return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: // Draft
-        return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
-  };
+  }), [invoices, clients, searchQuery, statusFilter]);
 
   return (
     <div className="p-6 sm:p-8 max-w-7xl mx-auto">
@@ -107,7 +88,6 @@ function Dashboard() {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Billed */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs text-left">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -123,7 +103,6 @@ function Dashboard() {
           <p className="text-xs text-slate-500 mt-1 font-medium">All historical billing</p>
         </div>
 
-        {/* Total Paid */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs text-left">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -141,7 +120,6 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Outstanding (Sent) */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs text-left">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -157,7 +135,6 @@ function Dashboard() {
           <p className="text-xs text-slate-500 mt-1 font-medium">Sent & pending response</p>
         </div>
 
-        {/* Overdue */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs text-left">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -176,7 +153,6 @@ function Dashboard() {
 
       {/* Filters & Search Toolbar */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 mb-6 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        {/* Search */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
@@ -188,7 +164,6 @@ function Dashboard() {
           />
         </div>
 
-        {/* Status Filters */}
         <div className="flex flex-wrap items-center gap-1.5">
           {['All', 'Paid', 'Sent', 'Draft', 'Overdue'].map(status => (
             <button
@@ -240,33 +215,31 @@ function Dashboard() {
 
                   return (
                     <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors">
-                      {/* Invoice ID */}
                       <td className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap">
                         {inv.id}
                       </td>
 
-                      {/* Client */}
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-900">{clientName}</div>
                         {client && <div className="text-[10px] text-slate-500 mt-0.5">{client.email}</div>}
                       </td>
 
-                      {/* Dates */}
+                      {/* Dates — parse as local time to avoid UTC off-by-one */}
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs">
                         <div>
-                          <span className="font-medium">Issued:</span> {new Date(inv.invoiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          <span className="font-medium">Issued:</span>{' '}
+                          {new Date(inv.invoiceDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                         <div className="mt-0.5 text-slate-500">
-                          <span className="font-medium">Due:</span> {new Date(inv.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          <span className="font-medium">Due:</span>{' '}
+                          {new Date(inv.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       </td>
 
-                      {/* Total Amount */}
                       <td className="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-base">
                         ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
-                      {/* Status */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="relative inline-block text-left">
                           <button
@@ -284,15 +257,13 @@ function Dashboard() {
 
                           {openDropdownId === inv.id && (
                             <>
-                              {/* Overlay to close when clicking outside */}
-                              <div 
-                                className="fixed inset-0 z-10" 
+                              <div
+                                className="fixed inset-0 z-10"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setOpenDropdownId(null);
                                 }}
                               />
-                              {/* Dropdown menu */}
                               <div className={`absolute left-0 w-32 rounded-lg bg-white border border-slate-200 shadow-lg z-25 py-1.5 animate-in fade-in duration-150 ${
                                 (filteredInvoices.length > 1 ? index >= filteredInvoices.length - 2 : true)
                                   ? 'bottom-full mb-1.5 slide-in-from-bottom-1'
@@ -330,7 +301,6 @@ function Dashboard() {
                         </div>
                       </td>
 
-                      {/* Actions */}
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         {!isConfirmingDelete ? (
                           <div className="flex items-center justify-end gap-1.5">

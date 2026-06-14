@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, Plus, Trash2, FileText, DollarSign, 
-  Calendar, CreditCard, Percent, Save, X 
+import {
+  ArrowLeft, Plus, Trash2, FileText, DollarSign,
+  Calendar, CreditCard, Percent, Save, X
 } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
 
 function InvoiceBuilder() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    invoices, 
-    clients, 
-    addInvoice, 
-    updateInvoice, 
-    getInvoiceSubtotal, 
-    getInvoiceTax, 
-    getInvoiceTotal 
+  const {
+    invoices,
+    clients,
+    addInvoice,
+    updateInvoice,
+    getInvoiceSubtotal,
+    getInvoiceTax,
+    getInvoiceTotal
   } = useInvoices();
 
   const isEditMode = !!id;
@@ -26,7 +26,7 @@ function InvoiceBuilder() {
   const [clientId, setClientId] = useState('');
   const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [taxRate, setTaxRate] = useState(8); // Default 8% tax
+  const [taxRate, setTaxRate] = useState(8);
   const [status, setStatus] = useState('Draft');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([
@@ -35,11 +35,23 @@ function InvoiceBuilder() {
 
   const [errors, setErrors] = useState({});
 
-  // Load Invoice data if in Edit Mode
+  // Guard so that subsequent invoice state updates don't reset the form while editing
+  const initialized = useRef(false);
+  const prevIdRef = useRef(null);
+
   useEffect(() => {
+    // Reset initialization guard when navigating to a different invoice
+    if (prevIdRef.current !== id) {
+      prevIdRef.current = id;
+      initialized.current = false;
+    }
+
+    if (initialized.current) return;
+
     if (isEditMode) {
       const invoice = invoices.find(inv => inv.id === id);
       if (invoice) {
+        initialized.current = true;
         setInvoiceId(invoice.id);
         setClientId(invoice.clientId);
         setInvoiceDate(invoice.invoiceDate);
@@ -49,15 +61,12 @@ function InvoiceBuilder() {
         setNotes(invoice.notes || '');
         setItems(invoice.items.map(item => ({ ...item })));
       } else {
-        // Redirect to dashboard if invoice ID is invalid
         navigate('/');
       }
     } else {
-      // Auto-generate invoice number in Create Mode
+      initialized.current = true;
       const randomNum = Math.floor(1000 + Math.random() * 9000);
       setInvoiceId(`INV-${randomNum}`);
-      
-      // Auto-populate dates (today and 30 days from today)
       const today = new Date().toISOString().split('T')[0];
       const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       setInvoiceDate(today);
@@ -67,7 +76,7 @@ function InvoiceBuilder() {
 
   // Line Item Handlers
   const handleItemChange = (itemId, field, value) => {
-    setItems(prevItems => 
+    setItems(prevItems =>
       prevItems.map(item => {
         if (item.id === itemId) {
           let updatedValue = value;
@@ -78,7 +87,6 @@ function InvoiceBuilder() {
         return item;
       })
     );
-    // Clear item errors
     if (errors.items) {
       setErrors(prev => ({ ...prev, items: '' }));
     }
@@ -95,7 +103,7 @@ function InvoiceBuilder() {
   };
 
   const handleRemoveItem = (itemId) => {
-    if (items.length === 1) return; // Must keep at least one row
+    if (items.length === 1) return;
     setItems(prev => prev.filter(item => item.id !== itemId));
   };
 
@@ -112,7 +120,15 @@ function InvoiceBuilder() {
     if (!invoiceDate) newErrors.invoiceDate = 'Issue date is required';
     if (!dueDate) newErrors.dueDate = 'Due date is required';
 
-    // Verify line items
+    if (invoiceDate && dueDate && dueDate < invoiceDate) {
+      newErrors.dueDate = 'Due date cannot be before the issue date';
+    }
+
+    const taxNum = Number(taxRate);
+    if (taxNum < 0 || taxNum > 100) {
+      newErrors.taxRate = 'Tax rate must be between 0 and 100';
+    }
+
     const hasEmptyDescription = items.some(item => !item.description.trim());
     const hasInvalidNumbers = items.some(item => item.quantity <= 0 || item.rate < 0);
 
@@ -146,7 +162,6 @@ function InvoiceBuilder() {
       updateInvoice(id, invoiceData);
       navigate(`/invoices/${id}`);
     } else {
-      // Check if invoice number is already taken
       const exists = invoices.some(inv => inv.id === invoiceId);
       if (exists) {
         setErrors(prev => ({ ...prev, invoiceId: 'Invoice ID already exists. Please choose a unique ID.' }));
@@ -161,7 +176,7 @@ function InvoiceBuilder() {
     <div className="p-6 sm:p-8 max-w-7xl mx-auto">
       {/* Top Header Row */}
       <div className="flex items-center gap-4 mb-8">
-        <Link 
+        <Link
           to="/"
           className="p-2 border border-slate-200 bg-white rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
         >
@@ -179,10 +194,10 @@ function InvoiceBuilder() {
 
       {/* Main Grid Form */}
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column: Form Details & Items */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* General Metadata Card */}
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs text-left">
             <h3 className="font-bold text-slate-950 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
@@ -310,8 +325,8 @@ function InvoiceBuilder() {
               </div>
 
               {/* Rows */}
-              {items.map((item, index) => (
-                <div 
+              {items.map((item) => (
+                <div
                   key={item.id}
                   className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center border border-slate-150 rounded-xl p-3 md:border-0 md:p-0"
                 >
@@ -428,9 +443,14 @@ function InvoiceBuilder() {
                   value={taxRate === 0 ? '' : taxRate}
                   onChange={(e) => setTaxRate(Number(e.target.value) || 0)}
                   placeholder="0"
-                  className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-sm text-right text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500"
+                  className={`w-20 px-2 py-1 border rounded-lg text-sm text-right text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 ${
+                    errors.taxRate ? 'border-rose-300' : 'border-slate-300'
+                  }`}
                 />
               </div>
+              {errors.taxRate && (
+                <p className="text-xs text-rose-500 font-semibold text-right">{errors.taxRate}</p>
+              )}
 
               <div className="flex items-center justify-between text-sm">
                 <span className="text-slate-500">Tax Amount</span>
@@ -475,7 +495,7 @@ function InvoiceBuilder() {
                 <Save className="h-4 w-4" />
                 {isEditMode ? 'Save Changes' : 'Save Invoice'}
               </button>
-              
+
               <Link
                 to="/"
                 className="w-full inline-flex items-center justify-center border border-slate-350 text-slate-700 hover:bg-slate-50 font-semibold py-2.5 rounded-lg text-sm transition-all text-center"

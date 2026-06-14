@@ -1,42 +1,40 @@
 import { useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, Printer, Download, Send, Edit, Mail, 
-  FileText, Loader2, X, ChevronRight, Info, Check 
+import {
+  ArrowLeft, Printer, Download, Send, Edit, Mail,
+  FileText, Loader2, X, ChevronRight, Info, Check
 } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
+import { getStatusStyles } from '../utils/statusStyles';
 import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 
 function InvoiceDetail() {
   const { id } = useParams();
-  const { 
-    invoices, 
-    clients, 
-    businessInfo, 
-    getInvoiceSubtotal, 
-    getInvoiceTax, 
+  const {
+    invoices,
+    clients,
+    businessInfo,
+    getInvoiceSubtotal,
+    getInvoiceTax,
     getInvoiceTotal,
     updateInvoiceStatus,
-    addNotification 
+    addNotification
   } = useInvoices();
 
   const invoiceCardRef = useRef(null);
 
-  // States
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
-  
-  // Email sending state
-  const [emailTab, setEmailTab] = useState('mock'); // 'mock' or 'native'
+
+  const [emailTab, setEmailTab] = useState('mock');
   const [emailTo, setEmailTo] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
-  const [sendingStage, setSendingStage] = useState(0); // 0: Idle/Form, 1: Sending, 2: Sent Success
+  const [sendingStage, setSendingStage] = useState(0);
   const [sendingProgress, setSendingProgress] = useState(0);
   const [sendingStatusText, setSendingStatusText] = useState('');
 
-  // Dynamically find invoice and client
   const invoice = invoices.find(inv => inv.id === id);
   const client = invoice ? clients.find(c => c.id === invoice.clientId) : null;
 
@@ -55,65 +53,49 @@ function InvoiceDetail() {
   const invoiceTax = getInvoiceTax(invoice);
   const invoiceTotal = getInvoiceTotal(invoice);
 
-  // Status Styling Helper
-  const getStatusStyles = (status) => {
-    switch (status) {
-      case 'Paid':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'Sent':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Overdue':
-        return 'bg-rose-100 text-rose-800 border-rose-200';
-      default: // Draft
-        return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
-  };
-
-  // 1. Print Handler
   const handlePrint = () => {
     window.print();
   };
 
-  // 2. Direct PDF Download Handler
   const handleDownloadPDF = async () => {
     if (!invoiceCardRef.current) return;
     setIsGeneratingPDF(true);
     try {
       const element = invoiceCardRef.current;
-      
+
       const canvas = await html2canvas(element, {
-        scale: 2, // High resolution
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff'
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
-      
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
+
+      const imgWidth = 210;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       let heightLeft = imgHeight;
       let position = 0;
-      
+
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, '', 'FAST');
       heightLeft -= pageHeight;
-      
+
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, '', 'FAST');
         heightLeft -= pageHeight;
       }
-      
+
       pdf.save(`Invoice_${invoice.id}.pdf`);
-      
+
       addNotification({
         title: 'PDF Downloaded',
         message: `Invoice ${invoice.id} exported successfully.`,
@@ -126,7 +108,6 @@ function InvoiceDetail() {
     }
   };
 
-  // 3. Mock Email Dispatch Animation Handler
   const handleMockSend = () => {
     if (!emailTo.trim()) return;
 
@@ -134,7 +115,6 @@ function InvoiceDetail() {
     setSendingProgress(0);
     setSendingStatusText('Generating secure PDF attachment...');
 
-    // Progress updates simulation
     const stages = [
       { progress: 25, text: 'Connecting to mail delivery nodes...' },
       { progress: 55, text: 'Uploading Invoice payload...' },
@@ -151,34 +131,27 @@ function InvoiceDetail() {
       } else {
         clearInterval(interval);
         setTimeout(() => {
-          // Update status in context
           updateInvoiceStatus(invoice.id, 'Sent');
-          
-          // Add notification
           addNotification({
             title: 'Invoice Sent',
             message: `Invoice ${invoice.id} was successfully emailed to ${emailTo}.`,
             type: 'success',
             actionLink: `/invoices/${invoice.id}`
           });
-          
           setSendingStage(2);
         }, 500);
       }
     }, 700);
   };
 
-  // 4. Native Email App Link Dispatch (mailto:)
   const handleNativeSend = () => {
     const mailtoUrl = `mailto:${encodeURIComponent(emailTo)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    
-    // Open in user default app by triggering a click on a temporary anchor element in a new tab
+
     const link = document.createElement('a');
     link.href = mailtoUrl;
     link.target = '_blank';
     link.click();
 
-    // Update state to sent status since dispatch was requested
     updateInvoiceStatus(invoice.id, 'Sent');
     addNotification({
       title: 'Invoice Shared via Client App',
@@ -189,20 +162,19 @@ function InvoiceDetail() {
     setSendingStage(2);
   };
 
-  // Open modal and pre-fill details from rendering context
   const openSendModal = () => {
     setEmailTo(client?.email || '');
     setEmailSubject(`Invoice ${invoice.id} from ${businessInfo.name}`);
     setEmailBody(
       `Hi ${client ? client.name : 'there'},\n\n` +
       `We appreciate your business! Here is invoice ${invoice.id} for $${invoiceTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.\n\n` +
-      `Payment is due by ${new Date(invoice.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.\n\n` +
+      `Payment is due by ${new Date(invoice.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.\n\n` +
       `${invoice.notes ? `Notes:\n${invoice.notes}\n\n` : ''}` +
       `Best regards,\n` +
       `${businessInfo.name}\n` +
       `${businessInfo.email || ''}`
     );
-    
+
     setSendingStage(0);
     setSendingProgress(0);
     setIsSendModalOpen(true);
@@ -210,13 +182,12 @@ function InvoiceDetail() {
 
   return (
     <div className="p-6 sm:p-8 max-w-5xl mx-auto">
-      
-      {/* 1. Header Control Bar (Hides in Print Mode) */}
+
+      {/* Header Control Bar (Hides in Print Mode) */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 print:hidden">
-        
-        {/* Navigation Breadcrumb */}
+
         <div className="flex items-center gap-3">
-          <Link 
+          <Link
             to="/"
             className="p-2 border border-slate-200 bg-white rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
           >
@@ -234,9 +205,7 @@ function InvoiceDetail() {
           </div>
         </div>
 
-        {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Edit */}
           <Link
             to={`/invoices/${invoice.id}/edit`}
             className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-350 hover:bg-slate-50 text-slate-750 font-semibold px-3.5 py-2 rounded-lg text-sm shadow-xs transition-colors cursor-pointer"
@@ -245,7 +214,6 @@ function InvoiceDetail() {
             Edit
           </Link>
 
-          {/* Print */}
           <button
             onClick={handlePrint}
             className="inline-flex items-center justify-center gap-1.5 bg-white border border-slate-350 hover:bg-slate-50 text-slate-755 font-semibold px-3.5 py-2 rounded-lg text-sm shadow-xs transition-colors cursor-pointer"
@@ -254,7 +222,6 @@ function InvoiceDetail() {
             Print
           </button>
 
-          {/* Download PDF */}
           <button
             onClick={handleDownloadPDF}
             disabled={isGeneratingPDF}
@@ -273,7 +240,6 @@ function InvoiceDetail() {
             )}
           </button>
 
-          {/* Send Invoice */}
           <button
             onClick={openSendModal}
             className="inline-flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm shadow-sm transition-all cursor-pointer"
@@ -284,17 +250,15 @@ function InvoiceDetail() {
         </div>
       </div>
 
-      {/* 2. Main Invoice Sheet (Print Optimized Card) */}
-      <div 
+      {/* Main Invoice Sheet (Print Optimized Card) */}
+      <div
         ref={invoiceCardRef}
         className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8 sm:p-12 max-w-4xl mx-auto text-left relative overflow-hidden print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:w-full"
       >
-        {/* Accent Bar at top */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-slate-900 print:hidden" />
 
-        {/* Invoice Metadata Header Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start border-b border-slate-150 pb-8 mb-8">
-          
+
           {/* Issuer Brand Block */}
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -321,8 +285,7 @@ function InvoiceDetail() {
                 No. <span className="text-slate-900">{invoice.id}</span>
               </p>
             </div>
-            
-            {/* Status Badge */}
+
             <div className="inline-block md:text-right">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${getStatusStyles(invoice.status)}`}>
                 <span className="h-1.5 w-1.5 rounded-full bg-current"></span>
@@ -330,25 +293,25 @@ function InvoiceDetail() {
               </span>
             </div>
 
-            {/* Issued & Due Dates */}
+            {/* Dates — parse as local time to avoid UTC off-by-one */}
             <div className="grid grid-cols-2 gap-4 text-xs font-medium md:justify-items-end">
               <div className="text-left md:text-right">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Date Issued</span>
                 <span className="text-slate-800 font-semibold">
-                  {new Date(invoice.invoiceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {new Date(invoice.invoiceDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
               <div className="text-left md:text-right">
                 <span className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">Due Date</span>
                 <span className="text-slate-800 font-semibold">
-                  {new Date(invoice.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {new Date(invoice.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Recipient details (Bill To) */}
+        {/* Recipient details */}
         <div className="mb-8 max-w-md">
           <h4 className="text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-2">Billed To</h4>
           {client ? (
@@ -396,7 +359,6 @@ function InvoiceDetail() {
 
         {/* Bottom Totals Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start border-t border-slate-100 pt-8">
-          {/* Notes Block */}
           <div className="space-y-2">
             {invoice.notes && (
               <>
@@ -408,7 +370,6 @@ function InvoiceDetail() {
             )}
           </div>
 
-          {/* Financial Totals block */}
           <div className="space-y-3.5 md:justify-self-end w-full max-w-sm">
             <div className="flex items-center justify-between text-xs font-semibold">
               <span className="text-slate-500">Subtotal</span>
@@ -437,26 +398,22 @@ function InvoiceDetail() {
           </div>
         </div>
 
-        {/* Footer disclaimer */}
         <div className="border-t border-slate-100 mt-12 pt-6 text-center text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
           Thank you for your business!
         </div>
       </div>
 
-      {/* 3. Send Invoice Dialog Modal */}
+      {/* Send Invoice Dialog Modal */}
       {isSendModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          
-          {/* Backdrop Overlay */}
-          <div 
+
+          <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => sendingStage !== 1 && setIsSendModalOpen(false)}
           />
 
-          {/* Modal Card wrapper */}
           <div className="bg-white w-full max-w-lg rounded-2xl border border-slate-200 shadow-2xl overflow-hidden z-10 transform transition-all animate-in fade-in zoom-in-95 duration-250 text-slate-850">
-            
-            {/* Modal Header */}
+
             <div className="flex items-center justify-between border-b border-slate-150 px-6 py-4 bg-slate-50">
               <div>
                 <h3 className="font-bold text-slate-900 text-base">Send Invoice {invoice.id}</h3>
@@ -472,17 +429,15 @@ function InvoiceDetail() {
               )}
             </div>
 
-            {/* Stage 0: Edit & Configure Details */}
+            {/* Stage 0: Edit & Configure */}
             {sendingStage === 0 && (
               <div className="flex flex-col">
-                
-                {/* Method selector tabs */}
                 <div className="flex border-b border-slate-150 bg-slate-50/50">
                   <button
                     onClick={() => setEmailTab('mock')}
                     className={`flex-1 py-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                      emailTab === 'mock' 
-                        ? 'border-emerald-500 text-emerald-700 bg-white' 
+                      emailTab === 'mock'
+                        ? 'border-emerald-500 text-emerald-700 bg-white'
                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/30'
                     }`}
                   >
@@ -491,8 +446,8 @@ function InvoiceDetail() {
                   <button
                     onClick={() => setEmailTab('native')}
                     className={`flex-1 py-3 text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                      emailTab === 'native' 
-                        ? 'border-emerald-500 text-emerald-700 bg-white' 
+                      emailTab === 'native'
+                        ? 'border-emerald-500 text-emerald-700 bg-white'
                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/30'
                     }`}
                   >
@@ -500,9 +455,7 @@ function InvoiceDetail() {
                   </button>
                 </div>
 
-                {/* Form fields */}
                 <div className="p-6 space-y-4">
-                  {/* Recipient email */}
                   <div className="text-left">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                       To *
@@ -516,7 +469,6 @@ function InvoiceDetail() {
                     />
                   </div>
 
-                  {/* Subject line */}
                   <div className="text-left">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                       Subject
@@ -530,7 +482,6 @@ function InvoiceDetail() {
                     />
                   </div>
 
-                  {/* Email Body Message */}
                   <div className="text-left">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
                       Message Body
@@ -543,7 +494,6 @@ function InvoiceDetail() {
                     />
                   </div>
 
-                  {/* Method specific tip & attachments */}
                   {emailTab === 'mock' ? (
                     <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 flex items-center justify-between">
                       <div className="flex items-center gap-2 text-xs text-slate-600 font-semibold">
@@ -566,14 +516,12 @@ function InvoiceDetail() {
                     </div>
                   )}
 
-                  {/* Error display */}
                   {!emailTo.trim() && (
                     <p className="text-xs text-rose-500 font-semibold text-left">
                       * Please specify a recipient email address.
                     </p>
                   )}
 
-                  {/* Modal Footer Controls */}
                   <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 mt-6">
                     <button
                       type="button"
@@ -602,20 +550,19 @@ function InvoiceDetail() {
                       </button>
                     )}
                   </div>
-
                 </div>
               </div>
             )}
 
-            {/* Stage 1: Simulated Dispatching Loader screen */}
+            {/* Stage 1: Sending */}
             {sendingStage === 1 && (
               <div className="p-12 text-center flex flex-col items-center justify-center space-y-6">
                 <Loader2 className="h-10 w-10 text-emerald-500 animate-spin" />
                 <div className="space-y-2.5 w-full max-w-xs">
                   <h4 className="font-bold text-slate-800 text-sm">{sendingStatusText}</h4>
                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                    <div 
-                      className="h-full bg-emerald-500 transition-all duration-300 ease-out" 
+                    <div
+                      className="h-full bg-emerald-500 transition-all duration-300 ease-out"
                       style={{ width: `${sendingProgress}%` }}
                     />
                   </div>
@@ -624,7 +571,7 @@ function InvoiceDetail() {
               </div>
             )}
 
-            {/* Stage 2: Successfully Dispatched Summary screen */}
+            {/* Stage 2: Success */}
             {sendingStage === 2 && (
               <div className="p-8 text-center flex flex-col items-center justify-center space-y-4">
                 <div className="h-12 w-12 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center text-emerald-600 animate-bounce">
@@ -633,7 +580,7 @@ function InvoiceDetail() {
                 <div className="space-y-1.5 max-w-sm">
                   <h4 className="font-bold text-slate-900 text-lg">Invoice Dispatched Successfully</h4>
                   <p className="text-slate-500 text-xs leading-normal">
-                    {emailTab === 'mock' 
+                    {emailTab === 'mock'
                       ? `We successfully simulated email transmission. Invoice status for ${invoice.id} is now updated to "Sent".`
                       : `Your browser was redirected to launch the system email program. Invoice status for ${invoice.id} is now updated to "Sent".`
                     }

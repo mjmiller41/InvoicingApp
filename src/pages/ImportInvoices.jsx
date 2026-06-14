@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, Upload, FileText, CheckCircle2, AlertCircle, 
+import {
+  ArrowLeft, Upload, FileText, CheckCircle2, AlertCircle,
   Settings, Columns, Table, Check, Play, RefreshCw, X, AlertTriangle, Plus, Clipboard, UserPlus, Info
 } from 'lucide-react';
 import { useInvoices } from '../context/InvoiceContext';
-import { parseCSV, extractFieldsFromText, loadPdfText } from '../utils/importParsers';
+import { parseCSV, extractFieldsFromText, loadPdfText, normalizeDate } from '../utils/importParsers';
 
 function ImportInvoices() {
   const navigate = useNavigate();
@@ -63,6 +63,18 @@ function ImportInvoices() {
   const [csvImportMode, setCsvImportMode] = useState('merge'); // 'merge' or 'new'
   const [isImportingCsv, setIsImportingCsv] = useState(false);
   const [csvImportSuccess, setCsvImportSuccess] = useState(false);
+
+  // Inline error state replacing native alert() calls
+  const [csvFileError, setCsvFileError] = useState('');
+  const [csvMappingAlert, setCsvMappingAlert] = useState('');
+
+  // Ref to cancel the post-import navigation timeout on unmount
+  const csvSuccessTimeoutRef = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (csvSuccessTimeoutRef.current) clearTimeout(csvSuccessTimeoutRef.current);
+    };
+  }, []);
 
   // ---------------------------------------------------------------------------
   // PDF Import Event Handlers & Parsing
@@ -262,10 +274,11 @@ function ImportInvoices() {
       setCsvRawText(text);
       const parsed = parseCSV(text);
       if (parsed.length < 2) {
-        alert('CSV file must contain a header row and at least one data row.');
+        setCsvFileError('CSV file must contain a header row and at least one data row.');
         return;
       }
-      
+
+      setCsvFileError('');
       const headers = parsed[0].map(h => h.trim());
       setCsvHeaders(headers);
       setCsvRows(parsed.slice(1));
@@ -322,7 +335,7 @@ function ImportInvoices() {
 
       setCsvMapping(autoMap);
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   };
 
   const handleCsvMappingChange = (field, value) => {
@@ -334,11 +347,12 @@ function ImportInvoices() {
     // 1. Validation of required column selections
     const required = ['invoiceId', 'clientName', 'clientEmail', 'invoiceDate'];
     const missing = required.filter(field => csvMapping[field] === '');
-    
+
     if (missing.length > 0) {
-      alert(`Please map all required fields: ${missing.map(f => f.replace('Id', ' ID').replace('Name', ' Name').replace('Email', ' Email').replace('Date', ' Date')).join(', ')}`);
+      setCsvMappingAlert(`Please map all required fields: ${missing.map(f => f.replace('Id', ' ID').replace('Name', ' Name').replace('Email', ' Email').replace('Date', ' Date')).join(', ')}`);
       return;
     }
+    setCsvMappingAlert('');
 
     const mapErrors = [];
     const invoiceGroups = {};
@@ -451,7 +465,7 @@ function ImportInvoices() {
 
         if (exists && csvImportMode === 'new') {
           // Generate a new ID
-          const suffix = Math.random().toString(36).substr(2, 4).toUpperCase();
+          const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
           finalId = `${previewInv.id}-${suffix}`;
         }
 
@@ -488,7 +502,8 @@ function ImportInvoices() {
       });
 
       setCsvImportSuccess(true);
-      setTimeout(() => {
+      if (csvSuccessTimeoutRef.current) clearTimeout(csvSuccessTimeoutRef.current);
+      csvSuccessTimeoutRef.current = setTimeout(() => {
         setCsvImportSuccess(false);
         navigate('/');
       }, 3000);
@@ -506,6 +521,8 @@ function ImportInvoices() {
     setCsvHeaders([]);
     setCsvPreviewInvoices([]);
     setCsvMappingErrors([]);
+    setCsvFileError('');
+    setCsvMappingAlert('');
   };
 
   // Helper calculating total for preview
@@ -1039,6 +1056,13 @@ Total Due $1200"
                 </button>
               </div>
 
+              {csvFileError && (
+                <div className="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-lg text-rose-800 text-xs font-semibold flex items-center gap-2 max-w-sm">
+                  <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
+                  <span>{csvFileError}</span>
+                </div>
+              )}
+
               {/* Template suggestion */}
               <div className="mt-8 max-w-md bg-slate-50 border border-slate-100 rounded-lg p-3 flex gap-2 text-left">
                 <Info className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
@@ -1219,6 +1243,13 @@ Total Due $1200"
                     </select>
                   </div>
                 </div>
+
+                {csvMappingAlert && (
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-lg text-rose-800 text-xs font-semibold flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />
+                    <span>{csvMappingAlert}</span>
+                  </div>
+                )}
 
                 <div className="flex gap-2.5 pt-3 border-t border-slate-100">
                   <button
