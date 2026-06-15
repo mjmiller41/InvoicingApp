@@ -279,7 +279,9 @@ export const InvoiceProvider = ({ children }) => {
           }
           return true;
         });
-        return [...newNotifs, ...cleaned];
+        const cleanedIds = new Set(cleaned.map(n => n.id));
+        const uniqueNew = newNotifs.filter(n => !cleanedIds.has(n.id));
+        return [...uniqueNew, ...cleaned];
       });
     }
 
