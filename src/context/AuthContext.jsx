@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useCallback, useContext } from 'react';
 import { authClient } from '../lib/auth-client';
 
 const AuthContext = createContext(null);
@@ -7,23 +7,25 @@ export function AuthProvider({ children }) {
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user ?? null;
 
-  async function login(email, password) {
+  const login = useCallback(async (email, password) => {
     const { error } = await authClient.signIn.email({ email, password });
     if (error) throw new Error(error.message);
-  }
+  }, []);
 
-  async function register(name, email, password) {
+  const register = useCallback(async (name, email, password) => {
     const { error } = await authClient.signUp.email({ name, email, password });
     if (error) throw new Error(error.message);
-  }
+  }, []);
 
-  async function loginWithGoogle() {
-    await authClient.signIn.social({ provider: 'google', callbackURL: '/app' });
-  }
+  const loginWithGoogle = useCallback(async () => {
+    const { error } = await authClient.signIn.social({ provider: 'google', callbackURL: '/app' });
+    if (error) throw new Error(error.message);
+  }, []);
 
-  async function logout() {
-    await authClient.signOut();
-  }
+  const logout = useCallback(async () => {
+    const { error } = await authClient.signOut();
+    if (error) throw new Error(error.message);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, loading: isPending, login, register, loginWithGoogle, logout }}>
