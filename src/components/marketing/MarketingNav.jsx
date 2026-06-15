@@ -5,9 +5,9 @@ import { Hammer, ArrowRight, Menu, X } from 'lucide-react';
 export function MarketingNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
-  const isLanding = pathname === '/welcome';
+  const isLanding = pathname === '/';
 
-  const anchor = (hash) => (isLanding ? hash : `/welcome${hash}`);
+  const anchor = (hash) => (isLanding ? hash : `/${hash}`);
 
   const navLinks = [
     { label: 'Features', to: anchor('#features') },
@@ -20,7 +20,7 @@ export function MarketingNav() {
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link to="/welcome" className="flex items-center gap-2.5 shrink-0">
+        <Link to="/" className="flex items-center gap-2.5 shrink-0">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500 text-slate-950 shadow-sm shadow-emerald-500/30">
             <Hammer className="h-5 w-5" />
           </span>
@@ -47,13 +47,13 @@ export function MarketingNav() {
         {/* Desktop CTA */}
         <div className="hidden sm:flex items-center gap-2">
           <Link
-            to="/app"
+            to="/login"
             className="text-sm font-semibold text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg transition-colors"
           >
             Log in
           </Link>
           <Link
-            to="/app"
+            to="/register"
             className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm transition-colors"
           >
             Start free
@@ -64,7 +64,7 @@ export function MarketingNav() {
         {/* Mobile: start free + hamburger */}
         <div className="flex sm:hidden items-center gap-2">
           <Link
-            to="/app"
+            to="/register"
             className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm px-3 py-2 rounded-xl shadow-sm transition-colors"
           >
             Start free
@@ -95,7 +95,7 @@ export function MarketingNav() {
           ))}
           <div className="pt-3 border-t border-slate-100 mt-2">
             <Link
-              to="/app"
+              to="/login"
               onClick={() => setMobileOpen(false)}
               className="block text-center py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
             >

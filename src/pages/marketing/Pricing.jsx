@@ -12,31 +12,30 @@ const PLANS = {
 };
 
 const COMPARISON = [
-  ['Unlimited invoices',   true,  true,  true ],
-  ['Invoice clients',      '3',   '∞',   '∞'  ],
-  ['PDF export & email',   true,  true,  true ],
-  ['Status dashboard',     true,  true,  true ],
-  ['Overdue reminders',    false, true,  true ],
-  ['Custom branding',      false, true,  true ],
-  ['Spreadsheet import',   false, true,  true ],
-  ['Recurring invoices',   false, true,  true ],
-  ['Multiple businesses',  '1',   '1',   '∞'  ],
-  ['Team seats',           '1',   '1',   '5'  ],
-  ['Revenue & tax reports',false, false, true ],
-  ['Priority support',     false, false, true ],
+  ['Business entities',        '1',   '5',   '∞'  ],
+  ['Clients',                  '∞',   '∞',   '∞'  ],
+  ['Invoices per month',       '5',   '25',  '∞'  ],
+  ['PDF export',               true,  true,  true ],
+  ['Status dashboard',         true,  true,  true ],
+  ['Custom branding & logo',   false, true,  true ],
+  ['Email send invoices',      false, true,  true ],
+  ['Spreadsheet import/export',false, true,  true ],
+  ['Recurring invoices',       false, true,  true ],
+  ['Team members',             false, false, '5'  ],
+  ['Revenue & tax reports',    false, false, true ],
 ];
 
 const FAQS = [
   ['Is there really a free plan?',
-   'Yes. The Solo plan is free forever for up to three clients with unlimited invoices — no card required to start.'],
+   'Yes. The Solo plan is free forever — unlimited clients, 5 invoices a month, and 1 business entity. No card required to start.'],
   ['Can I switch plans later?',
    'Anytime, in one click. Upgrades are prorated and downgrades take effect at the end of your billing cycle.'],
-  ['Do you charge per invoice?',
-   'Never. Send as many invoices as you like on any plan. You only pay for the plan tier, not per document.'],
+  ['What counts as an invoice?',
+   'Any invoice sent or saved in a calendar month. Drafts don\'t count. The monthly count resets on the 1st; Workshop has no cap.'],
   ['What happens when my trial ends?',
    'Your data stays put. If you do nothing, the account simply drops to the free Solo plan — nothing is deleted.'],
   ['Can I run more than one business?',
-   'Solo and Studio cover a single business profile. Workshop lets you run unlimited businesses and switch between them instantly.'],
+   'Solo covers one business. Studio supports up to five. Workshop removes the cap entirely so you can manage unlimited businesses from one account.'],
   ['How do I get my old invoices in?',
    'Studio and Workshop include a spreadsheet importer that brings your existing invoices and clients across in a couple of clicks.'],
 ];
@@ -147,9 +146,10 @@ export default function Pricing() {
               Get started
             </Link>
             <ul className="mt-7 space-y-3 text-sm">
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Up to <b className="text-slate-900">3 clients</b></span></li>
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Unlimited invoices</span></li>
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">PDF export &amp; email send</span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">1 business entity</b></span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">Unlimited clients</b></span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">5 invoices</b> per month</span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">PDF export</span></li>
               <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Status tracking dashboard</span></li>
             </ul>
           </Reveal>
@@ -181,11 +181,12 @@ export default function Pricing() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <ul className="mt-7 space-y-3 text-sm">
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">Unlimited clients</b></span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Up to <b className="text-slate-900">5 business entities</b></span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">25 invoices</b> per month</span></li>
               <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Everything in Solo, plus:</span></li>
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Automatic overdue reminders</span></li>
               <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Custom branding &amp; logo</span></li>
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Spreadsheet import</span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Email send invoices</span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Spreadsheet import/export</span></li>
               <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Recurring invoices</span></li>
             </ul>
           </Reveal>
@@ -213,11 +214,11 @@ export default function Pricing() {
               Start 14-day trial
             </Link>
             <ul className="mt-7 space-y-3 text-sm">
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">Unlimited businesses</b></span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">Unlimited</b> business entities</span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600"><b className="text-slate-900">Unlimited</b> invoices</span></li>
               <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Everything in Studio, plus:</span></li>
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Up to 5 team seats</span></li>
+              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Up to <b className="text-slate-900">5 team members</b></span></li>
               <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Revenue &amp; tax reports</span></li>
-              <li className="flex gap-2.5"><Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" /><span className="text-slate-600">Priority support</span></li>
             </ul>
           </Reveal>
         </div>

@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+
+client_secret_2_233530766914-5hfhgp8v1fjdtqe0j7r9uuhjgcpkjcmg.apps.googleusercontent.com.json
+
+# Dependency directories and files
+node_modules

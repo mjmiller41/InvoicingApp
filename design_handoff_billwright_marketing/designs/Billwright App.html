@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Billwright — Invoices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: {
+    sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+    mono: ['"Space Mono"', 'ui-monospace', 'monospace'],
+  } } } };
+</script>
+<style>
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; border: 3px solid transparent; background-clip: content-box; }
+</style>
+</head>
+<body class="font-sans bg-slate-100 text-slate-900 antialiased">
+
+<div class="flex h-screen overflow-hidden">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar" class="fixed lg:static z-50 top-0 bottom-0 left-0 w-64 bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800 -translate-x-full lg:translate-x-0 transition-transform duration-300">
+    <!-- brand switcher -->
+    <div class="relative border-b border-slate-800 shrink-0">
+      <button id="bizBtn" class="w-full h-16 flex items-center justify-between px-6 gap-3 text-left hover:bg-slate-800/40 transition-colors group">
+        <div class="flex items-center gap-3 overflow-hidden">
+          <div class="bg-emerald-500 p-2 rounded-lg text-slate-900 shrink-0"><i data-lucide="hammer" class="h-5 w-5"></i></div>
+          <div class="overflow-hidden">
+            <h2 class="font-bold text-sm text-white leading-tight truncate">TimberTraceCrafts</h2>
+            <span class="text-[10px] text-slate-400 block font-medium">Invoicing Suite</span>
+          </div>
+        </div>
+        <i data-lucide="chevron-down" id="bizChev" class="h-4 w-4 text-slate-400 transition-transform shrink-0"></i>
+      </button>
+      <div id="bizMenu" class="hidden absolute left-4 right-4 top-14 mt-1 bg-slate-950 border border-slate-800 rounded-lg shadow-xl z-50 py-1.5">
+        <div class="px-3 py-1 text-[9px] font-bold text-slate-500 uppercase tracking-wider">Switch Business</div>
+        <div class="mt-1 space-y-0.5">
+          <div class="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-900 mx-1.5">
+            <span class="flex-1 text-left font-semibold text-xs text-emerald-400 truncate pr-2">TimberTraceCrafts</span>
+            <i data-lucide="check" class="h-3.5 w-3.5 text-emerald-500"></i>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-900 mx-1.5">
+            <span class="flex-1 text-left font-semibold text-xs text-slate-200 truncate pr-2 hover:text-emerald-400 cursor-pointer">Northwood Joinery</span>
+          </div>
+        </div>
+        <div class="border-t border-slate-800/80 my-1.5"></div>
+        <button class="w-[calc(100%-12px)] flex items-center justify-center gap-1.5 py-2 px-3 hover:bg-emerald-500/10 text-emerald-400 font-bold text-xs rounded-md mx-1.5"><i data-lucide="plus" class="h-3.5 w-3.5"></i>Add Business</button>
+      </div>
+    </div>
+    <!-- nav -->
+    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+      <a href="#" data-nav="invoices" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/10"><i data-lucide="file-text" class="h-4 w-4 shrink-0"></i>Invoices</a>
+      <a href="#" data-nav="new" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all"><i data-lucide="plus" class="h-4 w-4 shrink-0"></i>New Invoice</a>
+      <a href="#" data-nav="import" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all"><i data-lucide="upload" class="h-4 w-4 shrink-0"></i>Import Invoices</a>
+      <a href="#" data-nav="clients" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all"><i data-lucide="users" class="h-4 w-4 shrink-0"></i>Clients</a>
+      <a href="#" data-nav="settings" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-all"><i data-lucide="settings" class="h-4 w-4 shrink-0"></i>Settings</a>
+    </nav>
+    <div class="p-4 border-t border-slate-800 text-center shrink-0">
+      <a href="Billwright Landing.html" class="text-xs text-slate-500 hover:text-emerald-400 transition-colors">← Back to billwright.com</a>
+    </div>
+  </aside>
+  <div id="backdrop" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- topbar -->
+    <header class="h-16 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-5 sm:px-8">
+      <div class="flex items-center gap-3">
+        <button id="menuBtn" class="lg:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg"><i data-lucide="menu" class="h-5 w-5"></i></button>
+        <div class="flex items-center gap-2 text-slate-600">
+          <i data-lucide="calendar" class="h-4 w-4 text-slate-400"></i>
+          <span class="text-sm font-semibold">Sun, Jun 14, 2026</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-5">
+        <button class="relative p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+          <i data-lucide="bell" class="h-5 w-5"></i>
+          <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+        </button>
+        <div class="flex items-center gap-2.5">
+          <span class="grid h-9 w-9 place-items-center rounded-lg bg-slate-900 text-white font-bold text-sm">T</span>
+          <div class="hidden sm:block leading-tight">
+            <div class="text-sm font-bold text-slate-900">TimberTraceCrafts</div>
+            <div class="text-[11px] text-slate-500">Administrator</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- scroll area -->
+    <main class="flex-1 overflow-y-auto">
+      <div class="p-6 sm:p-8 max-w-7xl mx-auto">
+        <!-- header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div>
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Invoices</h1>
+            <p class="text-slate-500 text-sm mt-1">Monitor receivables, track payment statuses, and generate client invoices.</p>
+          </div>
+          <div class="flex gap-2.5">
+            <button class="inline-flex items-center justify-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 rounded-lg shadow-xs transition-colors text-sm"><i data-lucide="upload" class="h-4 w-4"></i>Import Invoices</button>
+            <button class="inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-slate-950 font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-colors text-sm"><i data-lucide="plus" class="h-4 w-4 stroke-[2.5]"></i>Create Invoice</button>
+          </div>
+        </div>
+
+        <!-- overview cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>
+              <div class="p-1.5 rounded-lg bg-slate-50 text-slate-500 border border-slate-100"><i data-lucide="dollar-sign" class="h-4 w-4"></i></div>
+            </div>
+            <p class="text-2xl font-extrabold text-slate-900 mt-2" id="kpiRevenue">$0.00</p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">All historical billing</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Collected Paid</span>
+              <div class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100"><i data-lucide="check-circle-2" class="h-4 w-4"></i></div>
+            </div>
+            <p class="text-2xl font-extrabold text-slate-900 mt-2" id="kpiPaid">$0.00</p>
+            <p class="text-xs text-emerald-600 mt-1 font-semibold" id="kpiRate">0% collection rate</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Outstanding</span>
+              <div class="p-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-100"><i data-lucide="clock" class="h-4 w-4"></i></div>
+            </div>
+            <p class="text-2xl font-extrabold text-slate-900 mt-2" id="kpiOut">$0.00</p>
+            <p class="text-xs text-slate-500 mt-1 font-medium">Sent &amp; pending response</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overdue Balances</span>
+              <div class="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-100"><i data-lucide="alert-triangle" class="h-4 w-4"></i></div>
+            </div>
+            <p class="text-2xl font-extrabold text-slate-900 mt-2" id="kpiOverdue">$0.00</p>
+            <p class="text-xs text-rose-600 mt-1 font-semibold">Requires immediate attention</p>
+          </div>
+        </div>
+
+        <!-- toolbar -->
+        <div class="bg-white border border-slate-200 rounded-xl p-4 mb-6 shadow-xs flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="relative flex-1 max-w-md">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+            <input id="search" type="text" placeholder="Search by ID or client name..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 placeholder-slate-400" />
+          </div>
+          <div id="filters" class="flex flex-wrap items-center gap-1.5"></div>
+        </div>
+
+        <!-- table -->
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left min-w-[760px]">
+              <thead>
+                <tr class="border-b border-slate-200 bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                  <th class="px-6 py-4">Invoice ID</th>
+                  <th class="px-6 py-4">Client</th>
+                  <th class="px-6 py-4">Issued / Due</th>
+                  <th class="px-6 py-4">Total Amount</th>
+                  <th class="px-6 py-4">Status</th>
+                  <th class="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rows" class="divide-y divide-slate-100 text-sm"></tbody>
+            </table>
+          </div>
+          <div id="empty" class="hidden p-12 text-center max-w-sm mx-auto">
+            <div class="bg-slate-50 text-slate-400 h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100"><i data-lucide="file-text" class="h-6 w-6"></i></div>
+            <h3 class="font-semibold text-slate-800 text-base mb-1">No Invoices Found</h3>
+            <p class="text-slate-500 text-xs">No results found matching search filters. Create a new invoice to get started.</p>
+          </div>
+        </div>
+
+        <p class="mt-6 text-center text-xs text-slate-400">Showing live demo data · <a href="Billwright Landing.html" class="font-semibold text-emerald-600 hover:underline">Learn more about Billwright</a></p>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- toast -->
+<div id="toast" class="fixed bottom-6 right-6 z-[60] hidden items-center gap-2.5 bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-xl">
+  <i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-400"></i>
+  <span id="toastMsg">Status updated</span>
+</div>
+
+<script>
+  // ---------- data ----------
+  let invoices = [
+    { id: 'INV-1001', client: 'Sarah Jenkins Design', email: 'sarah@jenkinsdesign.com', issued: 'Jun 1, 2026', due: 'Jul 1, 2026', total: 2862.00, status: 'Paid' },
+    { id: 'INV-1002', client: 'Oak & Iron Builders', email: 'billing@oakandiron.com', issued: 'Jun 5, 2026', due: 'Jun 20, 2026', total: 777.60, status: 'Sent' },
+    { id: 'INV-1003', client: 'Sarah Jenkins Design', email: 'sarah@jenkinsdesign.com', issued: 'May 10, 2026', due: 'May 24, 2026', total: 648.00, status: 'Overdue' },
+    { id: 'INV-1004', client: 'Northwood Joinery', email: 'accounts@northwood.co', issued: 'Jun 9, 2026', due: 'Jun 23, 2026', total: 2720.00, status: 'Draft' },
+    { id: 'INV-1005', client: 'Studio Maud', email: 'hello@studiomaud.com', issued: 'Jun 11, 2026', due: 'Jul 11, 2026', total: 1450.00, status: 'Sent' },
+    { id: 'INV-1006', client: 'Measure & Co', email: 'pay@measureandco.com', issued: 'Apr 28, 2026', due: 'May 12, 2026', total: 980.00, status: 'Overdue' },
+  ];
+
+  const STATUSES = ['Draft', 'Sent', 'Paid', 'Overdue'];
+  let search = '';
+  let filter = 'All';
+  let openMenu = null;
+
+  const money = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const statusPill = (s) => ({
+    Paid: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    Sent: 'bg-blue-100 text-blue-800 border-blue-200',
+    Overdue: 'bg-rose-100 text-rose-800 border-rose-200',
+  })[s] || 'bg-slate-100 text-slate-700 border-slate-200';
+  const dotColor = (s) => ({ Paid: 'bg-emerald-500', Sent: 'bg-blue-500', Overdue: 'bg-rose-500' })[s] || 'bg-slate-400';
+
+  // ---------- KPIs ----------
+  function renderKpis() {
+    let billed = 0, paid = 0, out = 0, over = 0;
+    invoices.forEach(inv => {
+      billed += inv.total;
+      if (inv.status === 'Paid') paid += inv.total;
+      else if (inv.status === 'Sent') out += inv.total;
+      else if (inv.status === 'Overdue') over += inv.total;
+    });
+    document.getElementById('kpiRevenue').textContent = money(billed);
+    document.getElementById('kpiPaid').textContent = money(paid);
+    document.getElementById('kpiOut').textContent = money(out);
+    document.getElementById('kpiOverdue').textContent = money(over);
+    document.getElementById('kpiRate').textContent = (billed > 0 ? Math.round((paid/billed)*100) : 0) + '% collection rate';
+  }
+
+  // ---------- filters ----------
+  function renderFilters() {
+    const wrap = document.getElementById('filters');
+    wrap.innerHTML = ['All', ...STATUSES].map(s => `
+      <button data-filter="${s}" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+        filter === s ? 'bg-slate-900 text-white border-slate-900 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+      }">${s}</button>`).join('');
+    wrap.querySelectorAll('[data-filter]').forEach(b => b.addEventListener('click', () => { filter = b.dataset.filter; renderFilters(); renderRows(); }));
+  }
+
+  // ---------- rows ----------
+  function renderRows() {
+    const q = search.toLowerCase();
+    const list = invoices.filter(inv => {
+      const matchSearch = inv.id.toLowerCase().includes(q) || inv.client.toLowerCase().includes(q);
+      const matchStatus = filter === 'All' || inv.status === filter;
+      return matchSearch && matchStatus;
+    });
+    const tbody = document.getElementById('rows');
+    const empty = document.getElementById('empty');
+    if (list.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); lucide.createIcons(); return; }
+    empty.classList.add('hidden');
+    tbody.innerHTML = list.map(inv => `
+      <tr class="hover:bg-slate-50/60 transition-colors">
+        <td class="px-6 py-4 font-bold font-mono text-slate-800 whitespace-nowrap">${inv.id}</td>
+        <td class="px-6 py-4">
+          <div class="font-semibold text-slate-900">${inv.client}</div>
+          <div class="text-[10px] text-slate-500 mt-0.5">${inv.email}</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-slate-600 text-xs">
+          <div><span class="font-medium">Issued:</span> ${inv.issued}</div>
+          <div class="mt-0.5 text-slate-500"><span class="font-medium">Due:</span> ${inv.due}</div>
+        </td>
+        <td class="px-6 py-4 font-bold text-slate-800 whitespace-nowrap text-base">${money(inv.total)}</td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="relative inline-block text-left">
+            <button data-status-btn="${inv.id}" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full border hover:opacity-85 select-none transition-all ${statusPill(inv.status)}">
+              <span class="h-1.5 w-1.5 rounded-full bg-current"></span>${inv.status}
+              <i data-lucide="chevron-down" class="h-3 w-3 text-slate-500 shrink-0"></i>
+            </button>
+            <div data-status-menu="${inv.id}" class="hidden absolute left-0 top-full mt-1.5 w-32 rounded-lg bg-white border border-slate-200 shadow-lg z-20 py-1.5">
+              ${STATUSES.map(s => `
+                <button data-set="${inv.id}|${s}" class="w-full text-left px-3.5 py-1.5 text-xs font-medium transition-colors hover:bg-slate-50 flex items-center justify-between ${inv.status===s?'text-slate-900 bg-slate-50/50':'text-slate-600'}">
+                  <span class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full ${dotColor(s)}"></span>${s}</span>
+                  ${inv.status===s?'<i data-lucide=check class="h-3 w-3 text-emerald-500"></i>':''}
+                </button>`).join('')}
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4 text-right whitespace-nowrap">
+          <div class="flex items-center justify-end gap-1.5">
+            <button data-act="view" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="View"><i data-lucide="eye" class="h-4 w-4"></i></button>
+            <button data-act="edit" class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" title="Edit"><i data-lucide="pencil" class="h-4 w-4"></i></button>
+            <button data-del="${inv.id}" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Delete"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+    lucide.createIcons();
+    wireRows();
+  }
+
+  function wireRows() {
+    document.querySelectorAll('[data-status-btn]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.statusBtn;
+        const menu = document.querySelector(`[data-status-menu="${id}"]`);
+        const wasOpen = !menu.classList.contains('hidden');
+        closeMenus();
+        if (!wasOpen) menu.classList.remove('hidden');
+      });
+    });
+    document.querySelectorAll('[data-set]').forEach(b => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const [id, s] = b.dataset.set.split('|');
+        const inv = invoices.find(i => i.id === id);
+        if (inv) inv.status = s;
+        closeMenus();
+        renderKpis(); renderRows();
+        toast(`${id} marked ${s}`);
+      });
+    });
+    document.querySelectorAll('[data-del]').forEach(b => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        invoices = invoices.filter(i => i.id !== b.dataset.del);
+        renderKpis(); renderRows();
+        toast(`${b.dataset.del} deleted`);
+      });
+    });
+  }
+
+  function closeMenus() {
+    document.querySelectorAll('[data-status-menu]').forEach(m => m.classList.add('hidden'));
+  }
+  document.addEventListener('click', closeMenus);
+
+  // ---------- toast ----------
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.remove('hidden'); t.classList.add('flex');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.add('hidden'); t.classList.remove('flex'); }, 1900);
+  }
+
+  // ---------- sidebar nav ----------
+  document.querySelectorAll('.nav-item').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.remove('bg-emerald-500','text-slate-950','shadow-md','shadow-emerald-500/10','font-semibold');
+        n.classList.add('text-slate-400','font-medium');
+      });
+      a.classList.remove('text-slate-400','font-medium');
+      a.classList.add('bg-emerald-500','text-slate-950','shadow-md','shadow-emerald-500/10','font-semibold');
+      if (a.dataset.nav !== 'invoices') toast('This is a demo — only Invoices is wired up');
+    });
+  });
+
+  // business switcher
+  const bizBtn = document.getElementById('bizBtn');
+  const bizMenu = document.getElementById('bizMenu');
+  const bizChev = document.getElementById('bizChev');
+  bizBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    bizMenu.classList.toggle('hidden');
+    bizChev.classList.toggle('rotate-180');
+  });
+  document.addEventListener('click', () => { bizMenu.classList.add('hidden'); bizChev.classList.remove('rotate-180'); });
+
+  // mobile sidebar
+  const sb = document.getElementById('sidebar'), bd = document.getElementById('backdrop');
+  document.getElementById('menuBtn').addEventListener('click', () => { sb.classList.remove('-translate-x-full'); bd.classList.remove('hidden'); });
+  bd.addEventListener('click', () => { sb.classList.add('-translate-x-full'); bd.classList.add('hidden'); });
+
+  // search
+  document.getElementById('search').addEventListener('input', (e) => { search = e.target.value; renderRows(); });
+
+  // init
+  renderFilters();
+  renderKpis();
+  renderRows();
+  lucide.createIcons();
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(node -e \"const l = require\\('/home/michael/Code/Projects/InvoicingApp/node_modules/lucide-react'\\); const icons = Object.keys\\(l\\).filter\\(k => !k.startsWith\\('create'\\)\\); const check = ['Trees','Anvil','PenTool','Ruler','Paintbrush','Drill','BadgeCheck','CheckCircle2','CircleCheck','Star','Twitter','Github','Instagram','BellRing','Building2','Menu','Activity','FileText','Send','Download']; check.forEach\\(i => console.log\\(i, icons.includes\\(i\\) ? 'OK' : 'MISSING'\\)\\);\")",
+      "Bash(npm --prefix /home/michael/Code/Projects/InvoicingApp list lucide-react)",
+      "Bash(npm install *)",
+      "Bash(node -e ' *)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\(p.get\\('main',''\\), p.get\\('module',''\\), list\\(p.get\\('exports',{}\\).keys\\(\\)\\)[:5]\\)\")",
+      "Bash(node -e \"const l = require\\('/home/michael/Code/Projects/InvoicingApp/node_modules/lucide-react/dist/cjs/lucide-react.js'\\); const check = ['Trees','Anvil','PenTool','Ruler','Paintbrush','Drill','BadgeCheck','CheckCircle2','CircleCheck','Star','Twitter','Github','Instagram','BellRing','Building2','Menu','Activity','FileText','Send','Download','CheckCircle','TreePine','Wrench','Pen']; check.forEach\\(i => console.log\\(i, i in l ? 'OK' : 'MISSING'\\)\\);\")",
+      "Bash(node -e \"const l = require\\('/home/michael/Code/Projects/InvoicingApp/node_modules/lucide-react/dist/cjs/lucide-react.js'\\); const keys = Object.keys\\(l\\); const social = keys.filter\\(k => /twitter|github|instagram|social|x$/i.test\\(k\\)\\); console.log\\(social.join\\('\\\\n'\\)\\);\")",
+      "Bash(node -e \"const l = require\\('/home/michael/Code/Projects/InvoicingApp/node_modules/lucide-react/dist/cjs/lucide-react.js'\\); ['Globe', 'ExternalLink', 'Code2', 'Heart', 'Link2', 'Share2', 'ArrowUpRight', 'SquareArrowOutUpRight'].forEach\\(i => console.log\\(i, i in l ? 'OK' : 'MISSING'\\)\\);\")",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/welcome)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/pricing)",
+      "Bash(curl -s http://localhost:5174/)",
+      "Bash(kill %1)",
+      "Bash(python3 -c ' *)",
+      "Bash(npx better-auth *)",
+      "Bash(./node_modules/.bin/better-auth migrate *)",
+      "Bash(python3 -c \"import json,sys; p=json.load\\(sys.stdin\\); print\\('version:', p.get\\('version'\\)\\); print\\('bin:', p.get\\('bin'\\)\\); print\\('exports keys:', list\\(p.get\\('exports',{}\\).keys\\(\\)\\)[:10]\\)\")",
+      "Bash(node --input-type=module)",
+      "Bash(node --env-file=.env.local dev-server.js)",
+      "Bash(curl -s http://localhost:3001/api/auth/get-session -o /dev/null -w \"%{http_code}\")"
+    ]
+  }
+}
